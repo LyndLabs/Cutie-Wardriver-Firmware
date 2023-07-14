@@ -1,0 +1,60 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Arduino",
+            "compilerPath": "@/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/tools/warnings/none-g++",
+            "compilerArgs": [
+                "-U__STRICT_ANSI__",
+                "-free",
+                "-fipa-pta",
+                "-Werror=return-type",
+                "-mlongcalls",
+                "-mtext-section-literals",
+                "-fno-rtti",
+                "-falign-functions=4",
+                "-std=gnu++17"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/tools/sdk/include",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/tools/sdk/lwip2/include",
+                "/tmp/arduino-sketch-E2171A470622976C38ADADC5CDF0B5B8/core",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/cores/esp8266",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/variants/d1_mini",
+                "/home/alex/Arduino/libraries/ESP8266_and_ESP32_OLED_driver_for_SSD1306_displays/src",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/Wire",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SD/src",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SDFS/src",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SPI",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/ESP8266SdFat/src"
+            ],
+            "forcedInclude": [
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/cores/esp8266/Arduino.h"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "defines": [
+                "__ets__",
+                "ICACHE_FLASH",
+                "_GNU_SOURCE",
+                "ESP8266",
+                "MMU_IRAM_SIZE=0x8000",
+                "MMU_ICACHE_SIZE=0x8000",
+                "NONOSDK22x_190703=1",
+                "F_CPU=80000000L",
+                "LWIP_OPEN_SRC",
+                "TCP_MSS=536",
+                "LWIP_FEATURES=1",
+                "LWIP_IPV6=0",
+                "ARDUINO=10607",
+                "ARDUINO_ESP8266_WEMOS_D1MINI",
+                "ARDUINO_ARCH_ESP8266",
+                "ARDUINO_BOARD=\"ESP8266_WEMOS_D1MINI\"",
+                "ARDUINO_BOARD_ID=\"d1_mini_clone\"",
+                "FLASHMODE_DOUT",
+                "USBCON"
+            ]
+        }
+    ]
+}
