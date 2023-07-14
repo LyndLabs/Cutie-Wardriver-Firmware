@@ -18,6 +18,7 @@ Wardriver::Wardriver() {
 
 }
 
+// initialize GPS & get first coords
 void initGPS() {
 
 }
@@ -56,4 +57,3 @@ void Wardriver::init() {
     initGPS(0);
     initFS();
 }
-

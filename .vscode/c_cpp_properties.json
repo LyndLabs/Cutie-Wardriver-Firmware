@@ -24,6 +24,7 @@
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/variants/d1_mini",
                 "/home/alex/Arduino/libraries/ESP8266_and_ESP32_OLED_driver_for_SSD1306_displays/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/Wire",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/ESP8266WiFi/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SD/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SDFS/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SPI",
