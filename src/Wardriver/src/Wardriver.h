@@ -3,9 +3,11 @@
 class Wardriver{
     public:
         Wardriver();
-        void init();
+        static void init();
+        static void scan();
+        
 
     private:
-        void initScreen();
         void getBattery();
+        // void initSD();
 };
