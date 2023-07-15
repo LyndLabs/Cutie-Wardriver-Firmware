@@ -3,7 +3,8 @@
 
 void setup() {
     Serial.begin(115200);
-    Wardriver::init(); // start screen + gps
+    pinMode(A0, INPUT);
+    Wardriver::init(); 
 }
 
 void loop() {

@@ -150,6 +150,7 @@ void scanNets() {
     Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"WiFi: Scanning...");
 
     int n = WiFi.scanNetworks();
+    openNets = 0;
 
     #if defined(ESP8266)
         file = SD.open(filename, FILE_WRITE);
@@ -159,11 +160,13 @@ void scanNets() {
     
     for (int i = 0; i < n; ++i) {
         char* authType = getAuthType(WiFi.encryptionType(i));
+        if (WiFi.encryptionType(i) == ENC_TYPE_NONE) opennets++;
 
         sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),strDateTime,authType,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
         Serial.println(entry);
         file.println(entry);
     }
+    totalNets+=n;
 
     char message[21];
     sprintf(message,"Logged %d networks.",n);
@@ -173,18 +176,24 @@ void scanNets() {
     WiFi.scanDelete();
 }
 
+void getBattery() {
+    float analogVal = analogRead(A0);
+    // bat = map(analogVal,0,100);
+    bat = 100;
+}
+
 void Wardriver::init() {
     Screen::init();
     Screen::drawSplash(2);
-
+    
+    getBattery();
     initGPS();
     initFS();
 }
 
 void Wardriver::scan() {
-    // poll current GPS coordinates
-    updateGPS();
-    // scan WiFi nets
-    scanNets();
+    updateGPS(); // poll current GPS coordinates
+    getBattery();
+    scanNets(); // scan WiFi nets
 }
 

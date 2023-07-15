@@ -5,9 +5,5 @@ class Wardriver{
         Wardriver();
         static void init();
         static void scan();
-        
-
-    private:
-        void getBattery();
         // void initSD();
 };
