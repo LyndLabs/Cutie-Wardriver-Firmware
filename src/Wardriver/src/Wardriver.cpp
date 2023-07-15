@@ -113,7 +113,7 @@ void initGPS(uint8_t override) {
 
 void initFS() {
     uint8_t logNum = 0;
-    char * wiglePreHeader = "WigleWifi-1.4,appRelease=1.0,model=DevKit,release=1.0,device=WiFi Nugget,display=SH1106,board= ESP32-S2,brand=LyndLabs";
+    char * wiglePreHeader = "WigleWifi-1.4,appRelease=1.0,model=DevKit,release=1.0,device=DNS Driveby,display=SH1106,board= ESP8266,brand=LyndLabs";
     char * wigleHeader    = "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type";
    
     if (!SD.begin(SD_CS)) {
