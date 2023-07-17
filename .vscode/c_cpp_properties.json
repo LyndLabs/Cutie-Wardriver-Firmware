@@ -19,7 +19,7 @@
             "includePath": [
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/tools/sdk/include",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/tools/sdk/lwip2/include",
-                "/tmp/arduino-sketch-E2171A470622976C38ADADC5CDF0B5B8/core",
+                "/tmp/arduino-sketch-D1FDE28782005EBBE6CCB9501F07903F/core",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/cores/esp8266",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/variants/d1_mini",
                 "/home/alex/Arduino/libraries/ESP8266_and_ESP32_OLED_driver_for_SSD1306_displays/src",
@@ -28,7 +28,9 @@
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SD/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SDFS/src",
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SPI",
-                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/ESP8266SdFat/src"
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/ESP8266SdFat/src",
+                "/home/alex/Arduino/libraries/TinyGPSPlus-master/src",
+                "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/libraries/SoftwareSerial/src"
             ],
             "forcedInclude": [
                 "/home/alex/.arduino15/packages/esp8266/hardware/esp8266/3.1.1/cores/esp8266/Arduino.h"

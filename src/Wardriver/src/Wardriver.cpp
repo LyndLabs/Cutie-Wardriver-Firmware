@@ -160,7 +160,7 @@ void scanNets() {
     
     for (int i = 0; i < n; ++i) {
         char* authType = getAuthType(WiFi.encryptionType(i));
-        if (WiFi.encryptionType(i) == ENC_TYPE_NONE) opennets++;
+        if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
 
         sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),strDateTime,authType,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
         Serial.println(entry);
@@ -179,7 +179,7 @@ void scanNets() {
 void getBattery() {
     float analogVal = analogRead(A0);
     // bat = map(analogVal,0,100);
-    bat = 100;
+    bat = 0;
 }
 
 void Wardriver::init() {
@@ -195,5 +195,6 @@ void Wardriver::scan() {
     updateGPS(); // poll current GPS coordinates
     getBattery();
     scanNets(); // scan WiFi nets
+    smartDelay(500);
 }
 

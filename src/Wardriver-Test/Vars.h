@@ -1,3 +1,0 @@
-#define SERIAL_BAUD 115200
-#define GPS_BAUD 9600
-#define TIMEZONE_UTC -7

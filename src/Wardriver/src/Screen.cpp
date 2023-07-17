@@ -17,7 +17,7 @@ void Screen::init() {
     display.clear();
 }
 
-void Screen::drawMockup(char* gpscoords, char* time, uint8_t icon1, uint8_t icon2, uint8_t icon3, uint8_t icon4, uint8_t icon5, uint8_t icon6, char* message) {
+void Screen::drawMockup(char* gpscoords, char* time, uint8_t icon1, uint16_t icon2, uint8_t icon3, uint8_t icon4, uint8_t icon5, uint8_t icon6, char* message) {
     display.clear();
     display.drawLine(0,12,127,12);
     display.drawLine(0,49,127,49);
@@ -30,12 +30,14 @@ void Screen::drawMockup(char* gpscoords, char* time, uint8_t icon1, uint8_t icon
     char messagesubstr[21];
     sprintf(messagesubstr,"%.*s", 20, message);
 
+    
+
     display.drawString(98,0,time);
     display.drawString(0,0,subbuff);
     display.drawString(0,50,messagesubstr);
 
     display.drawString(20,17,String(icon1));
-    display.drawString(20,34,String(icon2));
+    display.drawString(20,34,(icon2 > 999)? (String((int) icon2/1000) + "K"):String(icon2));
 
     display.drawString(60,17,String(icon3));
     display.drawString(60,34,String(icon4));
