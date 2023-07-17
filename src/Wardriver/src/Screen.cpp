@@ -54,7 +54,7 @@ void Screen::drawSplash(uint8_t sec) {
     display.clear();
     display.drawXbm(0,0,128,64,splash_bits);
     display.drawString(52,40,"@AlexLynd");
-    display.drawString(20,40,"v1.2");
+    display.drawString(20,40,"v1.0");
     display.display();
     delay(sec*1000);
 }
