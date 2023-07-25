@@ -8,7 +8,7 @@
 
 #if defined(ESP8266)
     #include <SoftwareSerial.h>
-    SoftwareSerial ss(GPS_RX, GPS_TX); // RX, TX
+    SoftwareSerial Serial2(GPS_RX, GPS_TX); // RX, TX
 
 #elif defined(ESP32)
     Serial1.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
@@ -43,8 +43,8 @@ Wardriver::Wardriver() {
 static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   do {
-    while (ss.available())
-      gps.encode(ss.read());
+    while (Serial2.available())
+      gps.encode(Serial2.read());
   } while (millis() - start < ms);
 }
 
@@ -88,8 +88,8 @@ void updateGPS(uint8_t override) {
 // initialize GPS & get first coords
 void initGPS() {
 
-  ss.begin(9600);
-  if (ss.available() > 0) {
+  Serial2.begin(9600);
+  if (Serial2.available() > 0) {
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
   }
   else {

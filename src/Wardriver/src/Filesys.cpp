@@ -59,6 +59,7 @@ void Filesys::init(char * filename, Filesys::ScreenUpdateCallback callback) {
 
     if (!SD.begin(SD_CS)) {
         callback("SD Card: NOT FOUND");
+        ESP.wdtDisable();
         while (!SD.begin(SD_CS)) { delay(0); }
     }
     else {
