@@ -1,4 +1,5 @@
 # Wardriver
+[![Docker CI Build](https://github.com/LyndLabs/Wardriver/actions/workflows/docker-image.yml/badge.svg)](https://github.com/LyndLabs/Wardriver/actions/workflows/docker-image.yml)
 
 Wardriver is a wardriving project that supports both ESP8266 (and ESP32 boards soon). This guide will help you set up your development environment and flash the firmware to your device.
 

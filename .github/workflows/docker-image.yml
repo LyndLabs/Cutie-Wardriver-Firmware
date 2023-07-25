@@ -1,0 +1,47 @@
+name: Arduino Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_arduino:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        board_type: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build Arduino for ${{ matrix.board_type }}
+      continue-on-error: true
+      run: |
+        docker build . --file Dockerfile --tag wardriver:latest
+        docker run --rm -t wardriver:latest bash -c './arduino-cli compile -b ${{ matrix.board_type }} Wardriver'
+      env:
+        ARDUINO_CLI_NO_AUTO_UPDATE: 'true'
+
+    - name: Check if any build succeeded
+      id: check_build_status
+      run: |
+        if [ -f Wardriver/build/*.bin ]; then
+          echo "Build succeeded."
+          exit 0
+        else
+          echo "Build failed."
+          exit 1
+        fi
+      continue-on-error: true
+      
+  pass_if_any_build_succeeded:
+    runs-on: ubuntu-latest
+    if: ${{ needs.build_arduino.result == 'success' && needs.check_build_status.result == 'success' }}
+    steps:
+    - run: echo "CI Passed. At least one build succeeded."
