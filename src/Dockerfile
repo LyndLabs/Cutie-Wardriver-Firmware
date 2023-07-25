@@ -14,14 +14,15 @@ ARG ARDUINO_CLI_VERSION=0.22.0
 RUN wget https://github.com/arduino/arduino-cli/releases/download/${ARDUINO_CLI_VERSION}/arduino-cli_${ARDUINO_CLI_VERSION}_Linux_64bit.tar.gz
 RUN tar -xf arduino-cli_${ARDUINO_CLI_VERSION}_Linux_64bit.tar.gz
 
-# TODO: version-lock these
 COPY arduino-cli.yaml .
 RUN ./arduino-cli core update-index --config-file arduino-cli.yaml
 RUN ./arduino-cli core install esp8266:esp8266
+RUN ./arduino-cli core install esp32:esp32
 RUN ./arduino-cli lib install \
     "ESP8266 and ESP32 OLED driver for SSD1306 displays" \
     "Adafruit NeoPixel" \
     "TinyGPSPlus"
 
-COPY Demo ./Demo
-RUN ./arduino-cli compile -b esp8266:esp8266:d1_mini Demo \
+COPY Wardriver ./Wardriver
+RUN ./arduino-cli compile -b esp8266:esp8266:nodemcuv2 Wardriver
+RUN ./arduino-cli compile -b esp32:esp32:esp32 Wardriver
