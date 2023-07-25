@@ -75,8 +75,8 @@ void updateGPS(uint8_t override) {
     alt = 220; hdop = 1.5;
     sats = 3; speed = 69;
 
-    yr = 2023; mt = 7; dy = 14;
-    hr = 12; mn = 34; sc = 56;
+    yr = 2023; mt = 7; dy = 25;
+    hr = 10; mn = 36; sc = 56;
 
     sprintf(strDateTime,"%i-%i-%i %i:%i:%i",yr,mt,dy,hr,mn,sc);
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
@@ -155,7 +155,7 @@ void Wardriver::init() {
     getBattery();
     initGPS(0);
 
-    char filename[23]; sprintf(filename,"/NuggWD-%i%.02i%.02i",yr, mn, dy);
+    char filename[23]; sprintf(filename,"%i_%02d_%02d",yr, mt, dy);
     Filesys::init(filename, updateScreen);
 }
 

@@ -65,9 +65,7 @@ void Filesys::init(char * filename, Filesys::ScreenUpdateCallback callback) {
             ESP.wdtDisable();
             while (!SD.begin(SD_CS)) { delay(0); }
         }
-        else {
-            callback("SD Card: FOUND!!");
-        }
+        callback("SD Card: FOUND!!");
     #elif defined (ESP32)
         if (fat1.init("/fat1", "ffat")) {
         if (fat1.begin()) {
