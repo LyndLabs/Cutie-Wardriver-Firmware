@@ -3,6 +3,8 @@
 #include <SD.h>
 #include "../Vars.h"
 
+char fullFilename[30];
+
 /* FatFS logging or SD Card*/
 #if defined(ESP8266)
     
@@ -57,29 +59,53 @@ void Filesys::init(char * filename, Filesys::ScreenUpdateCallback callback) {
     //     char * deviceName = "WiFi Nugget"
     // #endif
 
-    if (!SD.begin(SD_CS)) {
-        callback("SD Card: NOT FOUND");
-        ESP.wdtDisable();
-        while (!SD.begin(SD_CS)) { delay(0); }
-    }
-    else {
-        callback("SD Card: FOUND!!");
-    }
+    #if defined (ESP8266)
+        if (!SD.begin(SD_CS)) {
+            callback("SD Card: NOT FOUND");
+            ESP.wdtDisable();
+            while (!SD.begin(SD_CS)) { delay(0); }
+        }
+        else {
+            callback("SD Card: FOUND!!");
+        }
+    #elif defined (ESP32)
+        if (fat1.init("/fat1", "ffat")) {
+        if (fat1.begin()) {
+            Serial.println("MSC lun 1 begin");
+        }
+        else
+            log_e("LUN 1 failed");
+        }
+        if (!CDCUSBSerial.begin())
+            Serial.println("Failed to start CDC USB stack");
+
+        // CDCUSBSerial.setCallbacks(new MyCDCCallbacks());
+        EspTinyUSB::registerDeviceCallbacks(new Device());
+        if(!FFat.begin(true)){ callback("USB: FatFS ERROR"); }
+    
+    #endif
+
+
 
     while (true) {
-        char fullFilename[30];
         sprintf(fullFilename,"/NuggWD-%s-%i.csv",filename, logNum);
-        // if (!FFat.exists(filename)) { break; }
-        if (!SD.exists(fullFilename)) { break; }
+        #if defined(ESP8266)
+            if (!SD.exists(fullFilename)) { break; }
+        #elif defined(ESP32)
+            if (!FFat.exists(fullFilename)) { break; }
+        #endif
         logNum++;
     }
 
     char tmpMessage[20];
-    sprintf(tmpMessage,"Created: %s",filename);
+    sprintf(tmpMessage,"Created: %s",fullFilename);
     callback(tmpMessage);
 
-    // file = FFat.open(String (filename), FILE_WRITE);
-    file = SD.open(filename, FILE_WRITE);
+    #if defined(ESP8266)
+        file = SD.open(fullFilename, FILE_WRITE);
+    #elif defined(ESP32)
+        file = FFat.open(String (fullFilename), FILE_WRITE);
+    #endif
     file.println(wiglePreHeader);
     file.println(wigleHeader);
     file.close();
@@ -87,7 +113,7 @@ void Filesys::init(char * filename, Filesys::ScreenUpdateCallback callback) {
 
 void Filesys::open() {
     #if defined(ESP8266)
-        file = SD.open(filename, FILE_WRITE);
+        file = SD.open(fullFilename, FILE_WRITE);
     #elif defined(ESP32)
         file = FFat.open(String (filename), FILE_APPEND);
     #endif

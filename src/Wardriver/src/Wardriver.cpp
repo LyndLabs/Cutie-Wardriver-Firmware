@@ -88,7 +88,7 @@ void updateGPS(uint8_t override) {
 // initialize GPS & get first coords
 void initGPS() {
 
-  Serial2.begin(9600);
+  Serial2.begin(GPS_BAUD);
   if (Serial2.available() > 0) {
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
   }
