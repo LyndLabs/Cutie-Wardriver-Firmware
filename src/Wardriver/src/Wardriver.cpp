@@ -2,16 +2,19 @@
 #include "Wardriver.h"
 #include "Recon.h"
 #include "Screen.h"
-#include <SD.h>
 #include <TinyGPSPlus.h>
-#include <SoftwareSerial.h>
+#include "../Vars.h"
+#include "Filesys.h"
 
+#if defined(ESP8266)
+    #include <SoftwareSerial.h>
+    SoftwareSerial ss(GPS_RX, GPS_TX); // RX, TX
 
-#define SD_CS  D8
-char filename[23];
-File file;
+#elif defined(ESP32)
+    Serial1.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
 
-SoftwareSerial ss(D4, D3); // RX, TX
+#endif
+
 TinyGPSPlus gps;
 
 // CURRENT GPS & DATTIME STRING
@@ -111,39 +114,6 @@ void initGPS(uint8_t override) {
     Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
 }
 
-void initFS() {
-    uint8_t logNum = 0;
-    char * wiglePreHeader = "WigleWifi-1.4,appRelease=1.0,model=DevKit,release=1.0,device=DNS Driveby,display=SH1106,board= ESP8266,brand=LyndLabs";
-    char * wigleHeader    = "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type";
-   
-    if (!SD.begin(SD_CS)) {
-        Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"SD Card: NOT FOUND");
-        while (!SD.begin(SD_CS)) {delay(0);}
-    }
-    else {
-         Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"SD Card: FOUND");
-    }
-
-    while (true) {
-        sprintf(filename,"/NuggWD-%i%.02i%.02i-%i.csv",yr, mn, dy, logNum);
-        // if (!FFat.exists(filename)) { break; }
-        if (!SD.exists(filename)) { break; }
-        logNum++;
-    }
-
-    char tmpMessage[20];
-    sprintf(tmpMessage,"Created: %s",filename);
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,tmpMessage);
-
-    // file = FFat.open(String (filename), FILE_WRITE);
-    file = SD.open(filename, FILE_WRITE);
-
-    file.println(wiglePreHeader);
-    file.println(wigleHeader);
-    file.close();
-
-}
-
 void scanNets() {
     char entry[150]; 
     Serial.println("[ ] Scanning WiFi networks...");
@@ -152,11 +122,7 @@ void scanNets() {
     int n = WiFi.scanNetworks();
     openNets = 0;
 
-    #if defined(ESP8266)
-        file = SD.open(filename, FILE_WRITE);
-    #elif defined(ESP32)
-        file = FFat.open(String (filename), FILE_APPEND);
-    #endif
+    Filesys::open();
     
     for (int i = 0; i < n; ++i) {
         char* authType = getAuthType(WiFi.encryptionType(i));
@@ -164,7 +130,7 @@ void scanNets() {
 
         sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),strDateTime,authType,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
         Serial.println(entry);
-        file.println(entry);
+        Filesys::write(entry);
     }
     totalNets+=n;
 
@@ -172,7 +138,7 @@ void scanNets() {
     sprintf(message,"Logged %d networks.",n);
     Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,message);
 
-    file.close();
+    Filesys::close();
     WiFi.scanDelete();
 }
 
@@ -187,12 +153,18 @@ void Wardriver::init() {
     Screen::drawSplash(2);
     
     getBattery();
-    initGPS();
-    initFS();
+    initGPS(0);
+
+    char filename[23]; sprintf(filename,"/NuggWD-%i%.02i%.02i",yr, mn, dy);
+    Filesys::init(filename, updateScreen);
+}
+
+void Wardriver::updateScreen(char* message) {
+    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,message);
 }
 
 void Wardriver::scan() {
-    updateGPS(); // poll current GPS coordinates
+    updateGPS(0); // poll current GPS coordinates
     getBattery();
     scanNets(); // scan WiFi nets
     smartDelay(500);

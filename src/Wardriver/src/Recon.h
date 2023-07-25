@@ -1,4 +1,10 @@
-#include <ESP8266WiFi.h>
+#pragma once
+
+#if defined(ESP8266)
+    #include <ESP8266WiFi.h>
+#elif defined(ESP32)
+    #include "WiFi.h"
+#endif
 
 char* getAuthType(uint8_t wifiAuth) {
     static char authType[15];

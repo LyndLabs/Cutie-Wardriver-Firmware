@@ -2,8 +2,9 @@
 #include "Screen.h"
 #include "SH1106.h"
 #include "graphics.h"
+#include "../Vars.h"
 
-SH1106Wire display(0x3C, 4, 5);
+SH1106Wire display(0x3C, SDA, SCL);
 
 Screen::Screen() {
 
