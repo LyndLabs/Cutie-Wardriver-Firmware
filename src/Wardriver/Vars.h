@@ -9,11 +9,11 @@
 #define SD_CS  D8
 
 #if defined(ESP8266)
-    #define GPS_RX 5
-    #define GPS_TX 16
+    #define GPS_RX D4
+    #define GPS_TX D3
 #elif defined(ESP32)
     #define SDA 33
     #define SCL 35
-    #define GPS_RX D4
-    #define GPS_TX D3
+    #define GPS_RX 5
+    #define GPS_TX 16
 #endif
