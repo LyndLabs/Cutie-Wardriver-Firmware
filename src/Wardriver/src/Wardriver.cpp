@@ -2,17 +2,14 @@
 #include "Wardriver.h"
 #include "Recon.h"
 #include "Screen.h"
+
 #include <TinyGPSPlus.h>
 #include "../Vars.h"
 #include "Filesys.h"
 
 #if defined(ESP8266)
     #include <SoftwareSerial.h>
-    SoftwareSerial Serial2(GPS_RX, GPS_TX); // RX, TX
-
-#elif defined(ESP32)
-    Serial1.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
-
+    SoftwareSerial SERIAL_VAR(GPS_RX, GPS_TX); // RX, TX
 #endif
 
 TinyGPSPlus gps;
@@ -43,8 +40,8 @@ Wardriver::Wardriver() {
 static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   do {
-    while (Serial2.available())
-      gps.encode(Serial2.read());
+    while (SERIAL_VAR.available())
+      gps.encode(SERIAL_VAR.read());
   } while (millis() - start < ms);
 }
 
@@ -88,8 +85,11 @@ void updateGPS(uint8_t override) {
 // initialize GPS & get first coords
 void initGPS() {
 
-  Serial2.begin(GPS_BAUD);
-  if (Serial2.available() > 0) {
+    #if defined(ESP32)
+        SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    #endif
+
+  if (SERIAL_VAR.available() > 0) {
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
   }
   else {
@@ -107,6 +107,7 @@ void initGPS() {
 }
 
 void initGPS(uint8_t override) {
+    SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
     Screen::drawMockup("...","...",0,0,0,0,0,0,"GPS: Waiting for fix");
     delay(500);
 
@@ -126,7 +127,11 @@ void scanNets() {
     
     for (int i = 0; i < n; ++i) {
         char* authType = getAuthType(WiFi.encryptionType(i));
-        if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+        #if defined(ESP8266)
+            if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+        #elif defined(ESP32)
+            if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
+        #endif
 
         sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),strDateTime,authType,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
         Serial.println(entry);
@@ -151,12 +156,13 @@ void getBattery() {
 void Wardriver::init() {
     Screen::init();
     Screen::drawSplash(2);
+    Filesys::init(updateScreen); delay(1000);
     
     getBattery();
     initGPS(0);
-
-    char filename[23]; sprintf(filename,"%i_%02d_%02d",yr, mt, dy);
-    Filesys::init(filename, updateScreen);
+    
+    char filename[23]; sprintf(filename,"%i-%02d-%02d",yr, mt, dy);
+    Filesys::createLog(filename, updateScreen);
 }
 
 void Wardriver::updateScreen(char* message) {
