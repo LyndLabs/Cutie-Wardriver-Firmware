@@ -24,23 +24,26 @@ char* getAuthType(uint8_t wifiAuth) {
 
         #elif defined(ESP32)
             case WIFI_AUTH_OPEN:
-                return "OPN";
+                return "[]";
             case WIFI_AUTH_WEP:
-                return "WEP";
+                return "[WEP]";
             case WIFI_AUTH_WPA_PSK:
                 return "[WPA]";
             case WIFI_AUTH_WPA2_PSK:
                 return "[WPA2]";
             case WIFI_AUTH_WPA_WPA2_PSK:
-                return "WPA+WPA2";
+                // return "WPA+WPA2";
+                return "[WPA2]";
             case WIFI_AUTH_WPA2_ENTERPRISE:
-                return "WPA2-EAP";
+                // return "WPA2-EAP";
+                return "[WPA2]";
             case WIFI_AUTH_WPA3_PSK:
                 return "[WPA3]";
             case WIFI_AUTH_WPA2_WPA3_PSK:
-                return "WPA2+WPA3";
+                // return "WPA2+WPA3";
+                return "[WPA3]";
             case WIFI_AUTH_WAPI_PSK:
-                return "WPAI";
+                return "[WPAI]";
         #endif
 
         default:
