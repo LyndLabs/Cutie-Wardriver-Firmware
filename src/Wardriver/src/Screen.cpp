@@ -43,10 +43,20 @@ void Screen::drawMockup(char* gpscoords, char* time, uint8_t icon1, uint16_t ico
     display.drawString(60,17,String(icon3));
     display.drawString(60,34,String(icon4));
 
-    display.drawString(102,17,String(icon5));
-    display.drawString(102,34,String(icon6));
+    // display Nugget instead
+    #if defined(ESP8266)
+        display.drawString(60,17,String(icon3));
+        display.drawString(60,34,String(icon4));
+        display.drawString(102,17,String(icon5));
+        display.drawString(102,34,String(icon6));
+         display.drawXbm(0,0,128,64,icons_bits);
+    #elif defined(ESP32)
+        display.drawString(60,17,String(icon3));
+        display.drawString(60,34,String(icon6));
+        display.drawXbm(0,0,128,64,Nugget_icons_bits);
+    #endif
 
-    display.drawXbm(0,0,128,64,icons_bits);
+   
     display.display();
 
 }

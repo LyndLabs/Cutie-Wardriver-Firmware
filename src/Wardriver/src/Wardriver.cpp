@@ -87,27 +87,33 @@ void initGPS() {
 
     #if defined(ESP32)
         SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    #elif defined(ESP8266)
+        SERIAL_VAR.begin(GPS_BAUD);
     #endif
 
-  if (SERIAL_VAR.available() > 0) {
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
-  }
-  else {
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: NOT FOUND");
-  }
-   while (!gps.location.isValid()) {
-    sats = gps.satellites.value();
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
-    Serial.println(gps.location.isValid());
-    delay(0);
-    smartDelay(500);
-  }
+    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Initializing...");
 
-  updateGPS();
+    unsigned long startGPSTime = millis();
+    while (! (gps.location.isValid() && gps.time.isValid())) {
+        if (millis()-startGPSTime > 5000 && gps.charsProcessed() < 10) {
+            Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: NOT FOUND");
+        }
+        else if (gps.charsProcessed() > 10) {
+            Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
+        }
+        sats = gps.satellites.value();
+        
+        Serial.println(gps.location.isValid());
+        delay(0); smartDelay(500);
+    }
+    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
+    updateGPS();
 }
 
 void initGPS(uint8_t override) {
-    SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    #if defined(ESP32)
+        SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    #endif
     Screen::drawMockup("...","...",0,0,0,0,0,0,"GPS: Waiting for fix");
     delay(500);
 
@@ -133,7 +139,7 @@ void scanNets() {
             if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
         #endif
 
-        sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),strDateTime,authType,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
+        sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),authType,strDateTime,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
         Serial.println(entry);
         Filesys::write(entry);
     }
@@ -159,7 +165,7 @@ void Wardriver::init() {
     Filesys::init(updateScreen); delay(1000);
     
     getBattery();
-    initGPS(0);
+    initGPS();
     
     char filename[23]; sprintf(filename,"%i-%02d-%02d",yr, mt, dy);
     Filesys::createLog(filename, updateScreen);
@@ -170,7 +176,7 @@ void Wardriver::updateScreen(char* message) {
 }
 
 void Wardriver::scan() {
-    updateGPS(0); // poll current GPS coordinates
+    updateGPS(); // poll current GPS coordinates
     getBattery();
     scanNets(); // scan WiFi nets
     smartDelay(500);

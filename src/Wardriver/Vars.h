@@ -25,8 +25,8 @@
     #define SCL 35
 
     #define SERIAL_VAR Serial1
-    #define GPS_RX 5
-    #define GPS_TX 6
+    #define GPS_RX 3  // AO
+    #define GPS_TX 16 // D4
     
     #define FS_VAR FFat
 #endif

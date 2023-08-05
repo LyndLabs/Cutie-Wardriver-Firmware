@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #include "Filesys.h"
-
+#include "SD.h"
 #include "../Vars.h"
 
 unsigned long startInit;
@@ -8,7 +8,7 @@ unsigned long finishInit;
 
 /* FatFS logging or SD Card*/
 #if defined(ESP8266)
-    #include <SD.h>
+    // #include <SD.h>
 #elif defined(ESP32)
     #include "FFat.h"  
     #include "cdcusb.h"
@@ -111,12 +111,19 @@ void Filesys::createLog(char * filename, Filesys::ScreenUpdateCallback callback)
     tmpFile.println(WIGLE_HEADER);
     tmpFile.close();
 
-    tmpFile.flush(); fat1.flush();
+    tmpFile.flush();    
+    #if defined(ESP32)
+        fat1.flush();
+    #endif
     // callback("LOG: WROTE HEADERS");
 }
 
 void Filesys::open() {
-    file = FS_VAR.open(fullFilename, FILE_APPEND);
+    #if defined(ESP8266)
+        file = FS_VAR.open(fullFilename, FILE_WRITE);
+    #elif defined (ESP32)
+        file = FS_VAR.open(fullFilename, FILE_APPEND);
+    #endif
 }
 
 void Filesys::write(char * data) {
