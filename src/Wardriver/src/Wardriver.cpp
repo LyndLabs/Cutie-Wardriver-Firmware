@@ -94,7 +94,7 @@ void initGPS() {
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Initializing...");
 
     unsigned long startGPSTime = millis();
-    while (! (gps.location.isValid() && gps.time.isValid())) {
+    while (! (gps.location.isValid())) {
         if (millis()-startGPSTime > 5000 && gps.charsProcessed() < 10) {
             Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: NOT FOUND");
         }
@@ -106,7 +106,12 @@ void initGPS() {
         Serial.println(gps.location.isValid());
         delay(0); smartDelay(500);
     }
+    while (! (gps.date.year() == 2000)) {
+        Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for time...");
+        delay(0); smartDelay(500);
+    }
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
+
     updateGPS();
 }
 
