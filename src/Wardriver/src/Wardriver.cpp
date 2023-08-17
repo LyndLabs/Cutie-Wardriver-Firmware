@@ -60,7 +60,7 @@ void updateGPS() {
     mn = gps.time.minute();
     sc = gps.time.second();
 
-    sprintf(strDateTime,"%i-%i-%i %i:%i:%i",yr,mt,dy,hr,mn,sc);
+    sprintf(strDateTime,"%04d-%02d-%02d %02d:%02d:%02d",yr,mt,dy,hr,mn,sc);
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
     sprintf(currTime,"%02d:%02d",hr,mn);
 
