@@ -144,7 +144,8 @@ void scanNets() {
             if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
         #endif
 
-        sprintf(entry,"%s,%s,%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),authType,strDateTime,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
+        sprintf(entry,"%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),authType,strDateTime,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
+								
         Serial.println(entry);
         Filesys::write(entry);
     }
