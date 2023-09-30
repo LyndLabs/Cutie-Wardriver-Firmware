@@ -3,10 +3,10 @@
 #include <HardwareSerial.h>
 
 #define VERSION 1.1
-#define VERSION_STR "v1.1"
+#define VERSION_STR "v1.2"
 #define WIGLE_HEADER "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type"
 
-#define SERIAL_BAUD 115200
+#define SERIAL_BAUD 1152007
 #define GPS_BAUD 9600
 #define TIMEZONE_UTC -7
 #define SCAN_INTERVAL 500

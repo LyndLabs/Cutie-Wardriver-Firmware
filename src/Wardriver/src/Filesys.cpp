@@ -47,12 +47,17 @@ Filesys::Filesys() {
 void Filesys::init(Filesys::ScreenUpdateCallback callback) {
 
     #if defined (ESP8266)
-        if (!SD.begin(SD_CS)) {
+        bool sdSuccess = SD.begin(SD_CS);
+        if (!sdSuccess) {
             callback("SD Card: NOT FOUND");
-            ESP.wdtDisable();
-            while (!SD.begin(SD_CS)) { delay(0); }
+
+            while (!sdSuccess) {
+                sdSuccess = SD.begin(SD_CS);
+                ESP.wdtFeed();
+            }
         }
         callback("SD Card: FOUND!!");
+
     #elif defined (ESP32)
 
         EspTinyUSB::registerDeviceCallbacks(new Device());
