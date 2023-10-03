@@ -104,7 +104,7 @@ void initGPS() {
         sats = gps.satellites.value();
         
         Serial.println(gps.location.isValid());
-        delay(0); smartDelay(500);
+        ESP.wdtFeed(); smartDelay(500);
     }
     while (! (gps.date.year() == 2000)) {
         Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for time...");
