@@ -2,7 +2,7 @@
 #include "Arduino.h"
 #include <HardwareSerial.h>
 
-#define VERSION 1.1
+#define VERSION 1.2
 #define VERSION_STR "v1.2"
 #define WIGLE_HEADER "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type"
 
