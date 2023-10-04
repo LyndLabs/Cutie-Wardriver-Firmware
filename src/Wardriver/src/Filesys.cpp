@@ -95,15 +95,15 @@ void Filesys::init(Filesys::ScreenUpdateCallback callback) {
 void Filesys::configure() {
 
     // create config.txt if it doesn't exist
-    if (!FS_VAR.exists("config.txt")) { 
-        File tmpSettings = FS_VAR.open("config.txt", FILE_WRITE);
-        tmpSettings.println("# Duplicates recommended");
-        tmpSettings.println("Duplicates: y");
-        tmpSettings.println("GPS RX: D4");
-        tmpSettings.println("GPS RX: D3");
+    // if (!FS_VAR.exists("config.txt")) { 
+    //     File tmpSettings = FS_VAR.open("config.txt", FILE_WRITE);
+        // tmpSettings.println("# Duplicates recommended");
+        // tmpSettings.println("Duplicates: y");
+        // tmpSettings.println("GPS RX: D4");
+        // tmpSettings.println("GPS RX: D3");
 
-        tmpSettings.close();
-    }
+        // tmpSettings.close();
+    // }
 
     // read settings & write to variables
     // File tmpSettings = FS_VAR.open("config.txt", FILE_WRITE);
