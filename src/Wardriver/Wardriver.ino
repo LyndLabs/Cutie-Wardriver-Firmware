@@ -7,6 +7,7 @@ void setup() {
     ESP.wdtDisable();
     
     Wardriver::init(); 
+    ESP.wdtEnable(0);
 }
 
 void loop() {

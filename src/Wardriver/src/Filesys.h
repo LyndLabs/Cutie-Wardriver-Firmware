@@ -11,4 +11,7 @@ class Filesys {
 
         static void open();
         static void close();
+
+    private:    
+        static void configure();
 };

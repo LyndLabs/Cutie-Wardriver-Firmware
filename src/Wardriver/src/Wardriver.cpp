@@ -106,9 +106,10 @@ void initGPS() {
         Serial.println(gps.location.isValid());
         ESP.wdtFeed(); smartDelay(500);
     }
-    while (! (gps.date.year() == 2000)) {
-        Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for time...");
-        delay(0); smartDelay(500);
+    while ((gps.date.year() == 2000)) {
+        Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Validating time...");
+        ESP.wdtFeed(); smartDelay(500);
+        Serial.println(gps.date.year());
     }
     Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
 
@@ -168,8 +169,8 @@ void getBattery() {
 void Wardriver::init() {
     Screen::init();
     Screen::drawSplash(2);
+
     Filesys::init(updateScreen); delay(1000);
-    
     getBattery();
     initGPS();
     
