@@ -7,37 +7,9 @@ unsigned long startInit;
 unsigned long finishInit;
 
 /* FatFS logging or SD Card*/
-#if defined(ESP8266)
-    // #include <SD.h>
-#elif defined(ESP32)
-    #include "FFat.h"  
-    #include "cdcusb.h"
-    #include "mscusb.h"
-    #include "flashdisk.h"
-    #include "FS.h"
+#include <SD.h>
 
-    FlashUSB fat1;
-    CDCusb CDCUSBSerial;
-    char *l1 = "ffat";
-
-    class Device: public USBCallbacks {
-        void onMount() { 
-            Serial.println("Mount"); 
-            finishInit = millis();  
-        }
-        void onUnmount() { Serial.println("Unmount"); }
-        void onSuspend(bool remote_wakeup_en) { Serial.println("Suspend"); }
-        void onResume() { Serial.println("Resume"); }
-    };
-
-    void echo_all(char c) {
-        CDCUSBSerial.write(c);
-        Serial.write(c);
-    }
-#endif
-
-
-char fullFilename[30];
+char fullFilename[100];
 File file; 
 
 Filesys::Filesys() {
@@ -45,50 +17,19 @@ Filesys::Filesys() {
 }
 
 void Filesys::init(Filesys::ScreenUpdateCallback callback) {
-
-    #if defined (ESP8266)
         bool sdSuccess = SD.begin(SD_CS);
         if (!sdSuccess) {
             callback("SD Card: NOT FOUND");
 
             while (!sdSuccess) {
                 sdSuccess = SD.begin(SD_CS);
-                ESP.wdtFeed();
+                //ESP.wdtFeed();
+                yield();
             }
         }
         callback("SD Card: FOUND!!");
 
-    #elif defined (ESP32)
-
-        EspTinyUSB::registerDeviceCallbacks(new Device());
-
-        callback("FS: Initializing...");
-        startInit = millis();
-        if (fat1.init("/fat1", "ffat")) {
-            if (fat1.begin()) {
-                Serial.println("MSC lun 1 begin");
-            }
-            else {
-                log_e("LUN 1 failed");
-            }
-        }
-
-        if (!CDCUSBSerial.begin())
-            Serial.println("Failed to start CDC USB stack");
-        
-        callback("FS: Starting FAT...");
-        while (!FFat.begin()) { delay(0); }
-        while (!fat1.available()) { delay(0); }
-
-        delay(500);
-
-        char tmpMsg[30];
-        sprintf(tmpMsg,"FS: Done in %d ms",(finishInit-startInit));
-        callback(tmpMsg);
-
-    #endif
-
-    Filesys::configure();
+    // Filesys::configure();
 
 }
 
@@ -118,17 +59,21 @@ void Filesys::createLog(char * filename, Filesys::ScreenUpdateCallback callback)
     uint8_t logNum = 0;
     char wiglePreHeader[140];
     sprintf(wiglePreHeader, "WigleWifi-1.4,appRelease=%f,model=%s,release=%F,device=%s,display=SH1106,board=%s,brand=LyndLabs",VERSION,MODEL,VERSION,DEVICE,BOARD);
-    
+    callback("suck my balls");
     // CHECK IF FILE EXISTS
     while (true) {
+        // Serial.println("checking if exists");
         sprintf(fullFilename,"/%s_%s_%i.csv",LOG_PREFIX,filename,logNum);
+        callback(fullFilename); break;
         if (!FS_VAR.exists(fullFilename)) { break; }
         logNum++;
+        yield();
     }
+    callback("success");
 
     char tmpMessage[40];
     sprintf(tmpMessage,"LOG: Created #%d",logNum);
-    callback(tmpMessage);
+    // callback(tmpMessage);
 
     // create temporary file object
     File tmpFile = FS_VAR.open(fullFilename, FILE_WRITE);
@@ -140,7 +85,7 @@ void Filesys::createLog(char * filename, Filesys::ScreenUpdateCallback callback)
 
     tmpFile.flush();    
     #if defined(ESP32)
-        fat1.flush();
+        //fat1.flush();
     #endif
     // callback("LOG: WROTE HEADERS");
 }

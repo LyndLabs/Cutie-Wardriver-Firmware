@@ -12,7 +12,7 @@
 #define SCAN_INTERVAL 500
 
 /* Pin Definitions */
-#define SD_CS  D8
+#define SD_CS  -1
 
 #if defined(ESP8266)
     #define GPS_RX D4
@@ -21,14 +21,14 @@
 
     #define FS_VAR SD
 #elif defined(ESP32)
-    #define SDA 33
-    #define SCL 35
+    #define SDA SDA
+    #define SCL SCL
 
     #define SERIAL_VAR Serial1
-    #define GPS_RX 3  // AO
-    #define GPS_TX 16 // D4
+    #define GPS_RX 20  // AO
+    #define GPS_TX 21 // D4
     
-    #define FS_VAR FFat
+    #define FS_VAR SD
 #endif
 
 
