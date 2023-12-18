@@ -16,7 +16,7 @@ Filesys::Filesys() {
 
 }
 
-void Filesys::init(Filesys::ScreenUpdateCallback callback) {
+void Filesys::init(ScreenUpdateCallback callback) {
         bool sdSuccess = SD.begin(SD_CS);
         if (!sdSuccess) {
             callback("SD Card: NOT FOUND");
@@ -54,26 +54,22 @@ void Filesys::configure() {
 
 
 /* INITLIALIZE LOG FILE & WRITE HEADERS*/
-void Filesys::createLog(char * filename, Filesys::ScreenUpdateCallback callback) { 
+void Filesys::createLog(char *filename, ScreenUpdateCallback callback) { 
 
     uint8_t logNum = 0;
     char wiglePreHeader[140];
     sprintf(wiglePreHeader, "WigleWifi-1.4,appRelease=%f,model=%s,release=%F,device=%s,display=SH1106,board=%s,brand=LyndLabs",VERSION,MODEL,VERSION,DEVICE,BOARD);
-    callback("suck my balls");
+
     // CHECK IF FILE EXISTS
     while (true) {
-        // Serial.println("checking if exists");
         sprintf(fullFilename,"/%s_%s_%i.csv",LOG_PREFIX,filename,logNum);
-        callback(fullFilename); break;
         if (!FS_VAR.exists(fullFilename)) { break; }
-        logNum++;
-        yield();
+        logNum++; yield();
     }
-    callback("success");
 
     char tmpMessage[40];
-    sprintf(tmpMessage,"LOG: Created #%d",logNum);
-    // callback(tmpMessage);
+    sprintf(tmpMessage,"Created: Log #%d",logNum);
+    callback(fullFilename);
 
     // create temporary file object
     File tmpFile = FS_VAR.open(fullFilename, FILE_WRITE);
@@ -87,7 +83,6 @@ void Filesys::createLog(char * filename, Filesys::ScreenUpdateCallback callback)
     #if defined(ESP32)
         //fat1.flush();
     #endif
-    // callback("LOG: WROTE HEADERS");
 }
 
 void Filesys::open() {
