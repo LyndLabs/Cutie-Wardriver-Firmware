@@ -17,8 +17,8 @@ TinyGPSPlus gps;
 // CURRENT GPS & DATTIME STRING
 float lat = 0; float lng = 0;
 int alt; double hdop;
-char strDateTime[15];
-char currentGPS[17];
+char strDateTime[30];
+char currentGPS[20];
 
 // RECON PARAMS
 uint32_t totalNets = 0;
@@ -31,7 +31,7 @@ uint8_t  speed = 0;
 // CURRENT DATETIME
 uint8_t hr; uint8_t mn; uint8_t sc;
 uint16_t yr; uint8_t mt; uint8_t dy;
-char currTime[6];
+char currTime[10];
 
 Wardriver::Wardriver() {
 
@@ -68,7 +68,7 @@ void updateGPS() {
 }
 
 void updateGPS(uint8_t override) {
-    lat = 37.8715, 122.2730; lng = 122.2730;
+    lat = 37.8715; lng = 122.2730;
     alt = 220; hdop = 1.5;
     sats = 3; speed = 69;
 
@@ -123,7 +123,7 @@ void initGPS() {
 
 void initGPS(uint8_t override) {
     #if defined(ESP32)
-        SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+        // SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
     #endif
     Screen::drawMockup("...","...",0,0,0,0,0,0,"GPS: Emulating fix");
     delay(500);
@@ -140,7 +140,7 @@ void scanNets() {
     int n = WiFi.scanNetworks();
     openNets = 0;
 
-    // Filesys::open();
+    Filesys::open();
     
     for (int i = 0; i < n; ++i) {
         char* authType = getAuthType(WiFi.encryptionType(i));
@@ -153,7 +153,7 @@ void scanNets() {
         sprintf(entry,"%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),authType,strDateTime,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
 								
         Serial.println(entry);
-        // Filesys::write(entry);
+        Filesys::write(entry);
     }
     totalNets+=n;
 
@@ -161,7 +161,7 @@ void scanNets() {
     sprintf(message,"Logged %d networks.",n);
     Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,message);
 
-    // Filesys::close();
+    Filesys::close();
     WiFi.scanDelete();
 }
 
@@ -177,16 +177,11 @@ void Wardriver::init() {
 
     Filesys::init(updateScreen); delay(1000);
     // getBattery();
-    initGPS(1);
-    
-    Serial.println("Creating a file...");
-
-    char filename[40]; sprintf(filename,"%i-%02d-%02d",yr, mt, dy);
-    Serial.println("Created the file!");
-    Serial.println(filename);
+    initGPS();
+    char fileDT[40]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
+    Serial.println(fileDT);
     delay(1000);
-    Filesys::createLog(filename, updateScreen);
-    Serial.println("Failed :(");
+    Filesys::createLog(fileDT, updateScreen);
 }
 
 void Wardriver::updateScreen(char* message) {
@@ -194,7 +189,7 @@ void Wardriver::updateScreen(char* message) {
 }
 
 void Wardriver::scan() {
-    updateGPS(1); // poll current GPS coordinates
+    updateGPS(); // poll current GPS coordinates
     getBattery();
     scanNets(); // scan WiFi nets
     smartDelay(500);
