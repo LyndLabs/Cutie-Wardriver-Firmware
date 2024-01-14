@@ -23,7 +23,7 @@ char strDateTime[30];
 char currentGPS[20]="...";
 
 // RECON PARAMS
-uint32_t totalNets = 1;
+uint32_t totalNets = 990; // for some reason doesn't work if = 0
 uint8_t  clients = 0;
 uint8_t  openNets = 0;
 uint8_t  sats = 0;
@@ -103,10 +103,19 @@ void updateGPS(uint8_t override) {
     sprintf(currTime,"%02d:%02d",hr,mn);
 
     sprintf(satsC,"%u",sats);
-    sprintf(totalC,"%u",(totalNets-1));
+
+    if (totalNets-1 > 999) {
+        // sprintf(totalC,"%uK",((totalNets-1)/1000));
+        sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
+        // Serial.println(((totalNets-1)/100)/10.0);
+    }
+    else {
+        sprintf(totalC,"%u",totalNets-1);
+    }
+
     sprintf(openNetsC,"%u",openNets);
     sprintf(tmpC,"%u°",getTemp());
-    sprintf(batC,"%u",getBattery());
+    sprintf(batC,"%u%",getBattery());
     sprintf(speedC,"%u",speed);
 
     Screen::setFooter("GPS: UPDATED");
