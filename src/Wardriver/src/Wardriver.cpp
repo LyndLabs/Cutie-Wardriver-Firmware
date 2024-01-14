@@ -2,6 +2,8 @@
 #include "Wardriver.h"
 #include "Recon.h"
 #include "Screen.h"
+#include "graphics.h"
+#include "driver/temp_sensor.h"
 
 #include <TinyGPSPlus.h>
 #include "../Vars.h"
@@ -17,25 +19,45 @@ TinyGPSPlus gps;
 // CURRENT GPS & DATTIME STRING
 float lat = 0; float lng = 0;
 int alt; double hdop;
-char strDateTime[15];
-char currentGPS[17];
+char strDateTime[30];
+char currentGPS[20]="...";
 
 // RECON PARAMS
-uint32_t totalNets = 0;
+uint32_t totalNets = 990; // for some reason doesn't work if = 0
 uint8_t  clients = 0;
 uint8_t  openNets = 0;
 uint8_t  sats = 0;
 uint8_t  bat = 0;
 uint8_t  speed = 0;
 
+//
+char satsC[3]; char totalC[10]; char openNetsC[4];
+char tmpC[4]; char batC[4]; char speedC[4]; 
+
 // CURRENT DATETIME
 uint8_t hr; uint8_t mn; uint8_t sc;
 uint16_t yr; uint8_t mt; uint8_t dy;
-char currTime[6];
+char currTime[10]="...";
 
 Wardriver::Wardriver() {
 
 }
+
+uint8_t getBattery() {
+    // float analogVal = analogRead(A0);
+    // bat = map(analogVal,0,100);
+    // bat = 0;
+    return 0;
+}
+
+uint8_t getTemp() {
+  Serial.print("Temperature: ");
+  float result = 0;
+  temp_sensor_read_celsius(&result);
+
+  return (int)result;
+}
+
 
 static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
@@ -64,11 +86,12 @@ void updateGPS() {
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
     sprintf(currTime,"%02d:%02d",hr,mn);
 
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"GPS: UPDATED");
+    Screen::setFooter("GPS: UPDOOTED");
+    Screen::update();
 }
 
 void updateGPS(uint8_t override) {
-    lat = 37.8715, 122.2730; lng = 122.2730;
+    lat = 37.8715; lng = 122.2730;
     alt = 220; hdop = 1.5;
     sats = 3; speed = 69;
 
@@ -79,7 +102,25 @@ void updateGPS(uint8_t override) {
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
     sprintf(currTime,"%02d:%02d",hr,mn);
 
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"GPS: UPDATED");
+    sprintf(satsC,"%u",sats);
+
+    if (totalNets-1 > 999) {
+        // sprintf(totalC,"%uK",((totalNets-1)/1000));
+        sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
+        // Serial.println(((totalNets-1)/100)/10.0);
+    }
+    else {
+        sprintf(totalC,"%u",totalNets-1);
+    }
+
+    sprintf(openNetsC,"%u",openNets);
+    sprintf(tmpC,"%u°",getTemp());
+    sprintf(batC,"%u%",getBattery());
+    sprintf(speedC,"%u",speed);
+
+    Screen::setFooter("GPS: UPDATED");
+    Screen::update();
+    // Screen::drawMockup("...","...",0,0,0,0,0,0,"test");
 }
 
 // initialize GPS & get first coords
@@ -91,48 +132,66 @@ void initGPS() {
         SERIAL_VAR.begin(GPS_BAUD);
     #endif
 
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Initializing...");
+    // char *test[6] = {"1","2","3","23","5","6"};
+    // Screen::setIcons(icons_bits, test, 6);    
+    // Screen::setHeader(currentGPS,currTime);   // pass ref
+    Screen::setFooter("GPS Initializing..."); //
+    Screen::update();
 
     unsigned long startGPSTime = millis();
+
     while (! (gps.location.isValid())) {
-        if (millis()-startGPSTime > 5000 && gps.charsProcessed() < 10) {
-            Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: NOT FOUND");
+        
+        if (millis()-startGPSTime > 5000 && gps.charsProcessed() < 10) {               
+            Screen::setFooter("GPS: NOT FOUND");
+            Screen::update();           
+            
         }
         else if (gps.charsProcessed() > 10) {
-            Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Waiting for fix...");
+            Screen::setFooter("GPS: Waiting for fix...");
+            Screen::update(); 
         }
-        sats = gps.satellites.value();
         
+        sats = gps.satellites.value();
         Serial.println(gps.location.isValid());
-        ESP.wdtFeed(); smartDelay(500);
+        //ESP.wdtFeed(); 
+        yield();
+
+	smartDelay(500);
     }
     while ((gps.date.year() == 2000)) {
-        Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: Validating time...");
-        ESP.wdtFeed(); smartDelay(500);
+        Screen::setFooter("GPS: Validating time...");
+        //ESP.wdtFeed(); 
+        yield();
+	    smartDelay(500);
         Serial.println(gps.date.year());
     }
-    Screen::drawMockup("...","...",sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
-
+    Screen::setFooter("GPS: LOCATION FOUND");
     updateGPS();
 }
 
 void initGPS(uint8_t override) {
     #if defined(ESP32)
-        SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+        // SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
     #endif
-    Screen::drawMockup("...","...",0,0,0,0,0,0,"GPS: Waiting for fix");
+    Screen::setFooter("GPS: Emulating fix");
+    Screen::update();
     delay(500);
 
     updateGPS(0);
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"GPS: LOCATION FOUND");
+    Screen::setFooter("GPS: LOCATION FOUND");
+    Screen::update();
+    Serial.println("Screen updated.");
 }
 
 void scanNets() {
     char entry[150]; 
     Serial.println("[ ] Scanning WiFi networks...");
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,"WiFi: Scanning...");
+    Screen::setFooter("WiFi: Scanning...");
+    Screen::update();
 
     int n = WiFi.scanNetworks();
+    ::totalNets+=n;
     openNets = 0;
 
     Filesys::open();
@@ -150,41 +209,61 @@ void scanNets() {
         Serial.println(entry);
         Filesys::write(entry);
     }
-    totalNets+=n;
+    
+    Serial.println(totalNets);
 
     char message[21];
     sprintf(message,"Logged %d networks.",n);
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,message);
+    Screen::setFooter(message);
+    Screen::update();
 
     Filesys::close();
     WiFi.scanDelete();
+    
 }
 
-void getBattery() {
-    float analogVal = analogRead(A0);
-    // bat = map(analogVal,0,100);
-    bat = 0;
-}
+
+// uint8_t dashboard[6] ={&sats,&totalNets,0,0,0,0};
+
+
+
+char *test[6] = {satsC,totalC,openNetsC,tmpC,batC,speedC};
 
 void Wardriver::init() {
+
+    temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
+    temp_sensor.dac_offset = TSENS_DAC_L2;  // TSENS_DAC_L2 is default; L4(-40°C ~ 20°C), L2(-10°C ~ 80°C), L1(20°C ~ 100°C), L0(50°C ~ 125°C)
+    temp_sensor_set_config(temp_sensor);
+    temp_sensor_start();
+
     Screen::init();
     Screen::drawSplash(2);
 
-    Filesys::init(updateScreen); delay(1000);
-    getBattery();
-    initGPS();
     
-    char filename[23]; sprintf(filename,"%i-%02d-%02d",yr, mt, dy);
-    Filesys::createLog(filename, updateScreen);
+    Screen::setIcons(icons_bits, test, 6);    
+    Screen::setHeader(currentGPS,currTime);
+    
+    Filesys::init(updateScreen); delay(1000);
+   
+    // getBattery();
+    initGPS();
+    char fileDT[150]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
+    Serial.println(sats);
+    Serial.println(const_cast<char*> (String(sats).c_str()));
+    Serial.println(fileDT);
+    delay(1000);
+    Filesys::createLog(fileDT, updateScreen);
 }
 
 void Wardriver::updateScreen(char* message) {
-    Screen::drawMockup(currentGPS,currTime,sats,totalNets,openNets,clients,bat,speed,message);
+    Screen::setFooter(message); Screen::update();
 }
 
 void Wardriver::scan() {
+    Serial.println("In scan.");
     updateGPS(); // poll current GPS coordinates
-    getBattery();
+    delay(1000);
+    // getBattery();
     scanNets(); // scan WiFi nets
     smartDelay(500);
 }
