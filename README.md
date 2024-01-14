@@ -1,8 +1,6 @@
-# Wardriver
-Basic wardriving for the ESP8266, compatible with WiGLE.  Docs coming soon.
+# ESP8266 / ESP32 Wardriver Firmware
+Basic Wardriving for Espressif!  Compatible with [DevKitty](https://devkitty.io) and [Cutie Wardriver](https://lyndlabs.io) kits by LyndLabs.  More info + docs coming soon!
 
-## V1.1 Changelog
-- [ ] Multithreading
-- [ ] ESP32 Support 
-- [ ] Internal Logging (ESP32-S2)
-- [ ] Web UI
+## Components
+- ESP8266 / ESP32
+- SH1106 OLED 
