@@ -67,7 +67,7 @@ void Filesys::createLog(char *filename, ScreenUpdateCallback callback) {
         logNum++; yield();
     }
 
-    char tmpMessage[40];
+    char tmpMessage[50];
     sprintf(tmpMessage,"Created: Log #%d",logNum);
     callback(fullFilename);
 
