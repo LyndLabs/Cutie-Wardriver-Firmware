@@ -266,52 +266,52 @@ void initGPS(uint8_t override) {
 }
 
 void scanNets() {
-  char entry[250];
-  Serial.println("[ ] Scanning WiFi networks...");
-  Screen::setFooter("WiFi: Scanning...");
-  Screen::update();
+    char entry[250];
+    Serial.println("[ ] Scanning WiFi networks...");
+    Screen::setFooter("WiFi: Scanning...");
+    Screen::update();
 
-  Filesys::open();
-  int numNets = 0;
+    Filesys::open();
+    int numNets = 0; // Reset at each scan call
 
-  auto processNetworks = [&](int numNets) {
-    for (int i = 0; i < numNets; i++) {
-      char* authType = getAuthType(WiFi.encryptionType(i));
+    auto processNetworks = [&](int networksFound) {
+        for (int i = 0; i < networksFound; i++) {
+            char* authType = getAuthType(WiFi.encryptionType(i));
 #if defined(ESP8266)
-      if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+            if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
 #elif defined(ESP32)
-      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
+            if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
 #endif
 
-      sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
+            sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
 
-      Serial.println(entry);
-      Filesys::write(entry);
-      totalNets++;
+            Serial.println(entry);
+            Filesys::write(entry);
+            totalNets++;
+            numNets++;
+        }
+    };
+
+    if (Filesys::dynamicScan) {
+        for (int channel = 1; channel <= 14; channel++) {
+            int networksOnChannel = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
+            processNetworks(networksOnChannel);
+            updateTimePerChannel(channel, networksOnChannel);
+        }
+    } else {
+        int networksFound = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
+        processNetworks(networksFound);
     }
-  };
 
-  if (Filesys::dynamicScan) {
-    // Dynamic async per-channel scanning
-    for (int channel = 1; channel <= 14; channel++) {
-      numNets = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
-      processNetworks(numNets);
-      updateTimePerChannel(channel, numNets);  // Update time per channel
-      numNets++;
-    }
-  } else {
-    numNets = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
-    processNetworks(numNets);
-  }
+    char message[30];
+    sprintf(message, "Logged %d Networks", numNets);
+    Screen::setFooter(message);
+    Screen::update();
 
-  char message[21];
-  sprintf(message, "Logged %d networks.", numNets);
-  Screen::setFooter(message);
-  Screen::update();
-
-  Filesys::close();
-  WiFi.scanDelete();
+    Filesys::close();
+    WiFi.scanDelete();
 }
+
 
 void Wardriver::init() {
 
