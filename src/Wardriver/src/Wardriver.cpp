@@ -226,11 +226,12 @@ void scanNets() {
   Serial.println("[ ] Scanning WiFi networks...");
   Screen::setFooter("WiFi: Scanning...");
   Screen::update();
-  int n = WiFi.scanNetworks();
-  if (Filesys::showHidden){
-    int n = WiFi.scanNetworks(false,true,false,Filesys::timePerChan); // scan hidden, 250ms default max/channel
-    Serial.println("[ ] Scanning Hidden WiFi networks...");
-  } 
+  int n = 0;
+  if (Filesys::showHidden) {
+    n = WiFi.scanNetworks(false, true, false, Filesys::timePerChan);  // scan hidden, 250ms default max/channel
+  } else {
+    n = WiFi.scanNetworks();
+  }
 
   Filesys::open();
 
