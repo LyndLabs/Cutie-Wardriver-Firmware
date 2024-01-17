@@ -32,9 +32,14 @@ uint8_t sats = 0;
 uint8_t bat = 0;
 uint8_t speed = 0;
 
-//
-char satsC[4] = "...";
+// DYNAMIC SCAN VARS
+const int popularChannels[] = { 1, 6, 11 };
+const int standardChannels[] = { 2, 3, 4, 5, 7, 8, 9, 10 };
+const int rareChannels[] = { 12, 13, 14 };  // Depending on region
+int timePerChannel[14] = { 300, 100, 100, 100, 100, 300, 100, 100, 100, 100, 300, 100, 100, 100 };
 
+// DASH ICONS
+char satsC[4] = "...";
 char totalC[4] = "...";
 char openNetsC[4] = "...";
 char tmpC[4] = "...";
@@ -50,7 +55,7 @@ uint8_t mt;
 uint8_t dy;
 char currTime[10] = "...";
 
-char* test[6] = { satsC, totalC, openNetsC, tmpC, batC, speedC };  // dash icon array
+char* test[6] = { satsC, totalC, openNetsC, tmpC, batC, speedC };
 
 Wardriver::Wardriver() {
 }
@@ -78,6 +83,49 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
+// Utility function to check if a value is in an array
+bool findInArray(int value, const int* array, int size) {
+  for (int i = 0; i < size; i++) {
+    if (array[i] == value) return true;
+  }
+  return false;
+}
+
+// TESTING: dynamic scan
+void updateTimePerChannel(int channel, int networksFound) {
+  const int FEW_NETWORKS_THRESHOLD = 1;
+  const int MANY_NETWORKS_THRESHOLD = 5;
+  const int POPULAR_TIME_INCREMENT = 75;   // Higher increment for popular channels
+  const int STANDARD_TIME_INCREMENT = 50;  // Standard increment
+  const int RARE_TIME_INCREMENT = 30;      // Lower increment for rare channels
+  const int MAX_TIME = 500;
+  const int MIN_TIME = 50;
+
+  int timeIncrement;
+
+  // Determine the time increment based on channel type
+  if (findInArray(channel, popularChannels, sizeof(popularChannels) / sizeof(popularChannels[0]))) {
+    timeIncrement = POPULAR_TIME_INCREMENT;
+  } else if (findInArray(channel, rareChannels, sizeof(rareChannels) / sizeof(rareChannels[0]))) {
+    timeIncrement = RARE_TIME_INCREMENT;
+  } else {
+    timeIncrement = STANDARD_TIME_INCREMENT;
+  }
+
+  // Adjust the time per channel based on the number of networks found
+  if (networksFound >= MANY_NETWORKS_THRESHOLD) {
+    timePerChannel[channel - 1] += timeIncrement;
+    if (timePerChannel[channel - 1] > MAX_TIME) {
+      timePerChannel[channel - 1] = MAX_TIME;
+    }
+  } else if (networksFound <= FEW_NETWORKS_THRESHOLD) {
+    timePerChannel[channel - 1] -= timeIncrement;
+    if (timePerChannel[channel - 1] < MIN_TIME) {
+      timePerChannel[channel - 1] = MIN_TIME;
+    }
+  }
+}
+
 void updateGPS() {
   lat = gps.location.lat();
   lng = gps.location.lng();
@@ -97,16 +145,7 @@ void updateGPS() {
   sprintf(strDateTime, "%04d-%02d-%02d %02d:%02d:%02d", yr, mt, dy, hr, mn, sc);
   sprintf(currentGPS, "%1.3f,%1.3f", lat, lng);
   sprintf(currTime, "%02d:%02d", hr, mn);
-
   sprintf(satsC, "%u", sats);
-  //     if (totalNets-1 > 999) {
-  //     // sprintf(totalC,"%uK",((totalNets-1)/1000));
-  //     sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
-  //     // Serial.println(((totalNets-1)/100)/10.0);
-  // }
-  // else {
-  //     sprintf(totalC,"%u",totalNets-1);
-  // }
 
   if (totalNets > 999) {
     // sprintf(totalC,"%uK",((totalNets-1)/1000));
@@ -117,12 +156,10 @@ void updateGPS() {
   }
 
   sprintf(openNetsC, "%u", openNets);
-
   uint8_t tmpTemp = getTemp();
   sprintf(tmpC, "%u", tmpTemp);
   sprintf(batC, "%u", getBattery());
   sprintf(speedC, "%u", speed);
-  sprintf(totalC, "%u", totalNets);
 
   Screen::setFooter("GPS: UPDATED");
   Screen::update();
@@ -229,40 +266,46 @@ void initGPS(uint8_t override) {
 }
 
 void scanNets() {
-  char entry[150];
+  char entry[250];
   Serial.println("[ ] Scanning WiFi networks...");
   Screen::setFooter("WiFi: Scanning...");
   Screen::update();
-  int n = 0;
-  if (Filesys::showHidden) {
-    n = WiFi.scanNetworks(false, true, false, Filesys::timePerChan);  // scan hidden, 250ms default max/channel
-  } else {
-    n = WiFi.scanNetworks();
-  }
 
   Filesys::open();
+  int numNets = 0;
 
-  for (int i = 0; i < n; ++i) {
-    char* authType = getAuthType(WiFi.encryptionType(i));
+  auto processNetworks = [&](int numNets) {
+    for (int i = 0; i < numNets; i++) {
+      char* authType = getAuthType(WiFi.encryptionType(i));
 #if defined(ESP8266)
-    if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+      if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
 #elif defined(ESP32)
-    if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
+      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
 #endif
 
-    sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
+      sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
 
-    Serial.println(entry);
-    Filesys::write(entry);
-    totalNets++;
-    Serial.print("Total: ");
-    Serial.println(totalNets);
+      Serial.println(entry);
+      Filesys::write(entry);
+      totalNets++;
+    }
+  };
+
+  if (Filesys::dynamicScan) {
+    // Dynamic async per-channel scanning
+    for (int channel = 1; channel <= 14; channel++) {
+      numNets = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
+      processNetworks(numNets);
+      updateTimePerChannel(channel, numNets);  // Update time per channel
+      numNets++;
+    }
+  } else {
+    numNets = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
+    processNetworks(numNets);
   }
 
-  Serial.println(::totalNets);
-
   char message[21];
-  sprintf(message, "Logged %d networks.", n);
+  sprintf(message, "Logged %d networks.", numNets);
   Screen::setFooter(message);
   Screen::update();
 
