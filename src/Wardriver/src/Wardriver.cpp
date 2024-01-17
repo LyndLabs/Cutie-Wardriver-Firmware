@@ -25,7 +25,7 @@ char strDateTime[30];
 char currentGPS[20] = "...";
 
 // RECON PARAMS
-uint32_t totalNets = 1;  // for some reason doesn't work if = 0
+uint32_t totalNets = 0;
 uint8_t clients = 0;
 uint8_t openNets = 0;
 uint8_t sats = 0;
@@ -108,6 +108,13 @@ void updateGPS() {
   //     sprintf(totalC,"%u",totalNets-1);
   // }
 
+  if (totalNets > 999) {
+    // sprintf(totalC,"%uK",((totalNets-1)/1000));
+    sprintf(totalC, "%gK", ((totalNets) / 100) / 10.0);
+    // Serial.println(((totalNets-1)/100)/10.0);
+  } else {
+    sprintf(totalC, "%u", totalNets);
+  }
 
   sprintf(openNetsC, "%u", openNets);
 
