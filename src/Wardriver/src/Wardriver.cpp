@@ -23,7 +23,7 @@ char strDateTime[30];
 char currentGPS[20]="...";
 
 // RECON PARAMS
-uint32_t totalNets = 990; // for some reason doesn't work if = 0
+uint32_t totalNets = 1; // for some reason doesn't work if = 0
 uint8_t  clients = 0;
 uint8_t  openNets = 0;
 uint8_t  sats = 0;
@@ -31,13 +31,19 @@ uint8_t  bat = 0;
 uint8_t  speed = 0;
 
 //
-char satsC[3]; char totalC[10]; char openNetsC[4];
-char tmpC[4]; char batC[4]; char speedC[4]; 
+char satsC[4]="..."; 
+
+char totalC[4]="..."; 
+char openNetsC[4]="...";
+char tmpC[4]="..."; char batC[4]="..."; char speedC[4]="..."; 
 
 // CURRENT DATETIME
 uint8_t hr; uint8_t mn; uint8_t sc;
 uint16_t yr; uint8_t mt; uint8_t dy;
 char currTime[10]="...";
+
+
+char *test[6] = {satsC,totalC,openNetsC,tmpC,batC,speedC};
 
 Wardriver::Wardriver() {
 
@@ -51,7 +57,7 @@ uint8_t getBattery() {
 }
 
 uint8_t getTemp() {
-  Serial.print("Temperature: ");
+//   Serial.print("Temperature: ");
   float result = 0;
   temp_sensor_read_celsius(&result);
 
@@ -86,7 +92,26 @@ void updateGPS() {
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
     sprintf(currTime,"%02d:%02d",hr,mn);
 
-    Screen::setFooter("GPS: UPDOOTED");
+    sprintf(satsC,"%u",sats);
+    //     if (totalNets-1 > 999) {
+    //     // sprintf(totalC,"%uK",((totalNets-1)/1000));
+    //     sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
+    //     // Serial.println(((totalNets-1)/100)/10.0);
+    // }
+    // else {
+    //     sprintf(totalC,"%u",totalNets-1);
+    // }
+
+    
+    sprintf(openNetsC,"%u",openNets);
+    
+    uint8_t tmpTemp = getTemp();
+    sprintf(tmpC,"%u",tmpTemp);
+    sprintf(batC,"%u",getBattery());
+    sprintf(speedC,"%u",speed);
+    sprintf(totalC, "%u", totalNets);
+
+    Screen::setFooter("GPS: UPDATED");
     Screen::update();
 }
 
@@ -153,6 +178,7 @@ void initGPS() {
         }
         
         sats = gps.satellites.value();
+        // totalNets = 0;
         Serial.println(gps.location.isValid());
         //ESP.wdtFeed(); 
         yield();
@@ -191,7 +217,7 @@ void scanNets() {
     Screen::update();
 
     int n = WiFi.scanNetworks();
-    ::totalNets+=n;
+    // totalNets+=n;
     openNets = 0;
 
     Filesys::open();
@@ -208,9 +234,12 @@ void scanNets() {
 								
         Serial.println(entry);
         Filesys::write(entry);
+        totalNets++;
+        Serial.print("Total: ");
+        Serial.println(totalNets);
     }
     
-    Serial.println(totalNets);
+    Serial.println(::totalNets);
 
     char message[21];
     sprintf(message,"Logged %d networks.",n);
@@ -222,15 +251,9 @@ void scanNets() {
     
 }
 
-
-// uint8_t dashboard[6] ={&sats,&totalNets,0,0,0,0};
-
-
-
-char *test[6] = {satsC,totalC,openNetsC,tmpC,batC,speedC};
-
 void Wardriver::init() {
 
+    totalNets = 0;
     temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
     temp_sensor.dac_offset = TSENS_DAC_L2;  // TSENS_DAC_L2 is default; L4(-40°C ~ 20°C), L2(-10°C ~ 80°C), L1(20°C ~ 100°C), L0(50°C ~ 125°C)
     temp_sensor_set_config(temp_sensor);
@@ -248,9 +271,9 @@ void Wardriver::init() {
     // getBattery();
     initGPS();
     char fileDT[150]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
-    Serial.println(sats);
-    Serial.println(const_cast<char*> (String(sats).c_str()));
-    Serial.println(fileDT);
+    // Serial.println(sats);
+    // Serial.println(const_cast<char*> (String(sats).c_str()));
+    // Serial.println(fileDT);
     delay(1000);
     Filesys::createLog(fileDT, updateScreen);
 }
@@ -262,6 +285,13 @@ void Wardriver::updateScreen(char* message) {
 void Wardriver::scan() {
     Serial.println("In scan.");
     updateGPS(); // poll current GPS coordinates
+
+    // Serial.print("Total: ");
+    // Serial.println(totalNets);
+    // Serial.println(test[1]);
+    // Serial.print(sizeof(totalC));
+    // Serial.print(sizeof(satsC));
+
     delay(1000);
     // getBattery();
     scanNets(); // scan WiFi nets

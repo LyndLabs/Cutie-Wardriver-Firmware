@@ -4,8 +4,8 @@
 // SET BOARD BEFORE COMPILING
 #define QT_WARDRIVER
 
-#define VERSION 1.4
-#define VERSION_STR "v1.4"
+#define VERSION 1.3
+#define VERSION_STR "v1.3"
 #define WIGLE_HEADER "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type"
 
 #define SERIAL_BAUD 115200
