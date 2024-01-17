@@ -323,8 +323,6 @@ void Wardriver::init() {
 
   Screen::init();
   Screen::drawSplash(2);
-
-
   Screen::setIcons(icons_bits, test, 6);
   Screen::setHeader(currentGPS, currTime);
 
@@ -332,12 +330,10 @@ void Wardriver::init() {
   delay(1000);
 
   // getBattery();
+
   initGPS();
   char fileDT[150];
   sprintf(fileDT, "%i-%02d-%02d", yr, mt, dy);
-  // Serial.println(sats);
-  // Serial.println(const_cast<char*> (String(sats).c_str()));
-  // Serial.println(fileDT);
   delay(1000);
   Filesys::createLog(fileDT, updateScreen);
 }
@@ -350,14 +346,6 @@ void Wardriver::updateScreen(char* message) {
 void Wardriver::scan() {
   Serial.println("In scan.");
   updateGPS();  // poll current GPS coordinates
-
-  // Serial.print("Total: ");
-  // Serial.println(totalNets);
-  // Serial.println(test[1]);
-  // Serial.print(sizeof(totalC));
-  // Serial.print(sizeof(satsC));
-
-  delay(1000);
   // getBattery();
   scanNets();  // scan WiFi nets
   smartDelay(500);
