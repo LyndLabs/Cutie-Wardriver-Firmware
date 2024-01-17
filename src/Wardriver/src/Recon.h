@@ -43,7 +43,7 @@ char* getAuthType(uint8_t wifiAuth) {
                 // return "WPA2+WPA3";
                 return "[WPA3]";
             case WIFI_AUTH_WAPI_PSK:
-                return "[WPAI]";
+                return "[WAPI]";
         #endif
 
         default:
