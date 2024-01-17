@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #pragma once
 
 class Filesys {
@@ -13,6 +14,7 @@ public:
   static void close();
   static bool dedupe;
   static bool showHidden;
+  static bool dynamicScan;
   static int timePerChan;
 
 private:

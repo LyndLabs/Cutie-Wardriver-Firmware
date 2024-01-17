@@ -9,6 +9,7 @@ unsigned long finishInit;
 // Define these is config.txt on SD as value=true/false, one per line
 bool Filesys::dedupe = false;
 bool Filesys::showHidden = false;
+bool Filesys::dynamicScan = false;
 int Filesys::timePerChan = 250;
 
 /* FatFS logging or SD Card*/
@@ -62,6 +63,10 @@ void Filesys::configure() {
         timePerChan = value.toInt();
         Serial.print("timePerChan ");
         Serial.println(timePerChan);
+      } else if (key == "dynamicScan") {
+        dynamicScan = (value == "true");
+        Serial.print("dynamicScan ");
+        Serial.println(dynamicScan ? "true" : "false");
       }
       // others config vars
     }
