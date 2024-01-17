@@ -25,6 +25,7 @@ char strDateTime[30];
 char currentGPS[20] = "...";
 
 // RECON PARAMS
+const int MAX_MACS = 150;
 uint32_t totalNets = 0;
 uint8_t clients = 0;
 uint8_t openNets = 0;
@@ -83,7 +84,15 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
-// Utility function to check if a value is in an array
+bool isSSIDSeen(String ssid, String ssidBuffer[], int& ssidIndex) {
+  for (int j = 0; j < ssidIndex; j++) {
+    if (ssidBuffer[j] == ssid) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool findInArray(int value, const int* array, int size) {
   for (int i = 0; i < size; i++) {
     if (array[i] == value) return true;
@@ -266,50 +275,64 @@ void initGPS(uint8_t override) {
 }
 
 void scanNets() {
-    char entry[250];
-    Serial.println("[ ] Scanning WiFi networks...");
-    Screen::setFooter("WiFi: Scanning...");
-    Screen::update();
+  // Buffer and index for SSIDs
+  static String ssidBuffer[MAX_MACS];
+  static int ssidIndex = 0;
 
-    Filesys::open();
-    int numNets = 0; // Reset at each scan call
+  char entry[250];
+  Serial.println("[ ] Scanning WiFi networks...");
+  Screen::setFooter("WiFi: Scanning...");
+  Screen::update();
 
-    auto processNetworks = [&](int networksFound) {
-        for (int i = 0; i < networksFound; i++) {
-            char* authType = getAuthType(WiFi.encryptionType(i));
+  Filesys::open();
+  int numNets = 0;  // Reset at each scan call
+
+  auto processNetworks = [&](int networksFound) {
+    for (int i = 0; i < networksFound; i++) {
+      if (Filesys::dedupe) {
+        String ssid = WiFi.SSID(i);
+        if (isSSIDSeen(ssid, ssidBuffer, ssidIndex)) {
+          continue;
+        }
+      }
+      char* authType = getAuthType(WiFi.encryptionType(i));
 #if defined(ESP8266)
-            if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+      if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
 #elif defined(ESP32)
-            if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
+      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
 #endif
 
-            sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
+      sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
 
-            Serial.println(entry);
-            Filesys::write(entry);
-            totalNets++;
-            numNets++;
-        }
-    };
+      Serial.println(entry);
+      Filesys::write(entry);
+      totalNets++;
+      numNets++;
 
-    if (Filesys::dynamicScan) {
-        for (int channel = 1; channel <= 14; channel++) {
-            int networksOnChannel = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
-            processNetworks(networksOnChannel);
-            updateTimePerChannel(channel, networksOnChannel);
-        }
-    } else {
-        int networksFound = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
-        processNetworks(networksFound);
+      if (Filesys::dedupe && ssidIndex < MAX_MACS) {
+        ssidBuffer[ssidIndex++] = WiFi.SSID(i);
+      }
     }
+  };
 
-    char message[30];
-    sprintf(message, "Logged %d Networks", numNets);
-    Screen::setFooter(message);
-    Screen::update();
+  if (Filesys::dynamicScan) {
+    for (int channel = 1; channel <= 14; channel++) {
+      int networksOnChannel = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
+      processNetworks(networksOnChannel);
+      updateTimePerChannel(channel, networksOnChannel);
+    }
+  } else {
+    int networksFound = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
+    processNetworks(networksFound);
+  }
 
-    Filesys::close();
-    WiFi.scanDelete();
+  char message[30];
+  sprintf(message, "Logged %d Networks", numNets);
+  Screen::setFooter(message);
+  Screen::update();
+
+  Filesys::close();
+  WiFi.scanDelete();
 }
 
 
