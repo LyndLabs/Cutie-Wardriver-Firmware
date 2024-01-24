@@ -4,6 +4,7 @@
 #include "Screen.h"
 #include "graphics.h"
 #include "driver/temp_sensor.h"
+#include "Adafruit_MAX1704X.h"
 
 #include <TinyGPSPlus.h>
 #include "../Vars.h"
@@ -15,6 +16,7 @@
 #endif
 
 TinyGPSPlus gps;
+Adafruit_MAX17048 maxlipo;
 
 // CURRENT GPS & DATTIME STRING
 float lat = 0; float lng = 0;
@@ -30,6 +32,8 @@ uint8_t  sats = 0;
 uint8_t  bat = 0;
 uint8_t  speed = 0;
 
+
+float batF =0;
 //
 char satsC[4]="..."; 
 
@@ -50,10 +54,8 @@ Wardriver::Wardriver() {
 }
 
 uint8_t getBattery() {
-    // float analogVal = analogRead(A0);
-    // bat = map(analogVal,0,100);
-    // bat = 0;
-    return 0;
+    bat = (uint8_t) maxlipo.cellPercent();
+    return bat;
 }
 
 uint8_t getTemp() {
@@ -93,14 +95,7 @@ void updateGPS() {
     sprintf(currTime,"%02d:%02d",hr,mn);
 
     sprintf(satsC,"%u",sats);
-    //     if (totalNets-1 > 999) {
-    //     // sprintf(totalC,"%uK",((totalNets-1)/1000));
-    //     sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
-    //     // Serial.println(((totalNets-1)/100)/10.0);
-    // }
-    // else {
-    //     sprintf(totalC,"%u",totalNets-1);
-    // }
+
 
     
     sprintf(openNetsC,"%u",openNets);
@@ -110,6 +105,14 @@ void updateGPS() {
     sprintf(batC,"%u",getBattery());
     sprintf(speedC,"%u",speed);
     sprintf(totalC, "%u", totalNets);
+    //     if (totalNets-1 > 999) {
+    //     // sprintf(totalC,"%uK",((totalNets-1)/1000));
+    //     sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
+    //     // Serial.println(((totalNets-1)/100)/10.0);
+    // }
+    // else {
+    //     sprintf(totalC,"%u",totalNets);
+    // }
 
     Screen::setFooter("GPS: UPDATED");
     Screen::update();
@@ -149,6 +152,21 @@ void updateGPS(uint8_t override) {
 }
 
 // initialize GPS & get first coords
+void initBat() {
+    Screen::setFooter("BAT: Initializing...");
+    Screen::update();
+
+    if (!maxlipo.begin()) {
+        Screen::setFooter("Charger NOT FOUND!");
+        Screen::update();
+    }
+    Screen::setFooter("Charger FOUND!");
+    Screen::update();
+
+    getBattery();
+
+}
+
 void initGPS() {
 
     #if defined(ESP32)
@@ -259,16 +277,16 @@ void Wardriver::init() {
     temp_sensor_set_config(temp_sensor);
     temp_sensor_start();
 
+
     Screen::init();
     Screen::drawSplash(2);
 
-    
     Screen::setIcons(icons_bits, test, 6);    
     Screen::setHeader(currentGPS,currTime);
     
     Filesys::init(updateScreen); delay(1000);
-   
-    // getBattery();
+    initBat();
+    
     initGPS();
     char fileDT[150]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
     // Serial.println(sats);
@@ -282,9 +300,21 @@ void Wardriver::updateScreen(char* message) {
     Screen::setFooter(message); Screen::update();
 }
 
+unsigned long lastTime = millis();
+unsigned long tmpTime = millis();
+
 void Wardriver::scan() {
     Serial.println("In scan.");
     updateGPS(); // poll current GPS coordinates
+
+    tmpTime = millis();
+    if ((tmpTime-lastTime)>3000) {
+        getBattery();
+        lastTime = tmpTime;
+          Serial.print(F("Batt Voltage: ")); Serial.print(maxlipo.cellVoltage(), 3); Serial.println(" V");
+  Serial.print(F("Batt Percent: ")); Serial.print(maxlipo.cellPercent(), 1); Serial.println(" %");
+    }
+    
 
     // Serial.print("Total: ");
     // Serial.println(totalNets);
