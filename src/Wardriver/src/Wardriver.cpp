@@ -36,7 +36,6 @@ uint8_t speed = 0;
 // DYNAMIC SCAN VARS
 const int popularChannels[] = { 1, 6, 11 };
 const int standardChannels[] = { 2, 3, 4, 5, 7, 8, 9, 10 };
-const int rareChannels[] = { 12, 13, 14 };  // Depending on region
 int timePerChannel[14] = { 300, 100, 100, 100, 100, 300, 100, 100, 100, 100, 300, 100, 100, 100 };
 
 // DASH ICONS
@@ -104,9 +103,8 @@ bool findInArray(int value, const int* array, int size) {
 void updateTimePerChannel(int channel, int networksFound) {
   const int FEW_NETWORKS_THRESHOLD = 1;
   const int MANY_NETWORKS_THRESHOLD = 5;
-  const int POPULAR_TIME_INCREMENT = 75;   // Higher increment for popular channels
+  const int POPULAR_TIME_INCREMENT = 100;   // Higher increment for popular channels
   const int STANDARD_TIME_INCREMENT = 50;  // Standard increment
-  const int RARE_TIME_INCREMENT = 30;      // Lower increment for rare channels
   const int MAX_TIME = 500;
   const int MIN_TIME = 50;
 
@@ -115,8 +113,6 @@ void updateTimePerChannel(int channel, int networksFound) {
   // Determine the time increment based on channel type
   if (findInArray(channel, popularChannels, sizeof(popularChannels) / sizeof(popularChannels[0]))) {
     timeIncrement = POPULAR_TIME_INCREMENT;
-  } else if (findInArray(channel, rareChannels, sizeof(rareChannels) / sizeof(rareChannels[0]))) {
-    timeIncrement = RARE_TIME_INCREMENT;
   } else {
     timeIncrement = STANDARD_TIME_INCREMENT;
   }
@@ -316,13 +312,13 @@ void scanNets() {
   };
 
   if (Filesys::dynamicScan) {
-    for (int channel = 1; channel <= 14; channel++) {
-      int networksOnChannel = WiFi.scanNetworks(false, true, false, timePerChannel[channel - 1], channel);
+    for (int channel = 1; channel <= 11; channel++) {
+      int networksOnChannel = WiFi.scanNetworks(false, Filesys::showHidden, false, timePerChannel[channel - 1], channel);
       processNetworks(networksOnChannel);
       updateTimePerChannel(channel, networksOnChannel);
     }
   } else {
-    int networksFound = Filesys::showHidden ? WiFi.scanNetworks(false, true, false, Filesys::timePerChan) : WiFi.scanNetworks();
+    int networksFound = WiFi.scanNetworks(false, Filesys::showHidden, false, Filesys::timePerChan);
     processNetworks(networksFound);
   }
 
