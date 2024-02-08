@@ -9,7 +9,7 @@ unsigned long finishInit;
 /* FatFS logging or SD Card*/
 #include <SD.h>
 
-char fullFilename[100];
+char fullFilename[120];
 File file; 
 
 Filesys::Filesys() {
@@ -57,7 +57,7 @@ void Filesys::configure() {
 void Filesys::createLog(char *filename, ScreenUpdateCallback callback) { 
 
     uint8_t logNum = 0;
-    char wiglePreHeader[140];
+    char wiglePreHeader[160];
     sprintf(wiglePreHeader, "WigleWifi-1.4,appRelease=%f,model=%s,release=%F,device=%s,display=SH1106,board=%s,brand=LyndLabs",VERSION,MODEL,VERSION,DEVICE,BOARD);
 
     // CHECK IF FILE EXISTS

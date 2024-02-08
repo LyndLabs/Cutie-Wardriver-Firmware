@@ -17,6 +17,7 @@
 
 TinyGPSPlus gps;
 Adafruit_MAX17048 maxlipo;
+bool lipoPresent = true;
 
 // CURRENT GPS & DATTIME STRING
 float lat = 0; float lng = 0;
@@ -25,7 +26,7 @@ char strDateTime[30];
 char currentGPS[20]="...";
 
 // RECON PARAMS
-uint32_t totalNets = 1; // for some reason doesn't work if = 0
+uint32_t totalNets = 0; // for some reason doesn't work if = 0
 uint8_t  clients = 0;
 uint8_t  openNets = 0;
 uint8_t  sats = 0;
@@ -37,9 +38,9 @@ float batF =0;
 //
 char satsC[4]="..."; 
 
-char totalC[4]="..."; 
+char totalC[5]="..."; 
 char openNetsC[4]="...";
-char tmpC[4]="..."; char batC[4]="..."; char speedC[4]="..."; 
+char tmpC[5]="..."; char batC[5]="..."; char speedC[4]="..."; 
 
 // CURRENT DATETIME
 uint8_t hr; uint8_t mn; uint8_t sc;
@@ -54,7 +55,12 @@ Wardriver::Wardriver() {
 }
 
 uint8_t getBattery() {
-    bat = (uint8_t) maxlipo.cellPercent();
+    bat = 0;
+    if (lipoPresent) {
+        bat = (uint8_t) maxlipo.cellPercent();
+        if (bat>100) bat = 100;
+    }
+
     return bat;
 }
 
@@ -94,25 +100,17 @@ void updateGPS() {
     sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
     sprintf(currTime,"%02d:%02d",hr,mn);
 
-    sprintf(satsC,"%u",sats);
-
-
-    
+    sprintf(satsC,"%u",sats);       
     sprintf(openNetsC,"%u",openNets);
     
     uint8_t tmpTemp = getTemp();
-    sprintf(tmpC,"%u",tmpTemp);
-    sprintf(batC,"%u",getBattery());
+    sprintf(tmpC,"%u°",tmpTemp);
+    sprintf(batC,"%u%%",getBattery());
     sprintf(speedC,"%u",speed);
-    sprintf(totalC, "%u", totalNets);
-    //     if (totalNets-1 > 999) {
-    //     // sprintf(totalC,"%uK",((totalNets-1)/1000));
-    //     sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
-    //     // Serial.println(((totalNets-1)/100)/10.0);
-    // }
-    // else {
-    //     sprintf(totalC,"%u",totalNets);
-    // }
+   
+    if      (totalNets > 999)  { sprintf(totalC,"%gK",((totalNets-1)/100)/10.0); }
+    else if (totalNets > 9999) { sprintf(totalC,"%uK",((totalNets-1)/1000));     }
+    else                       { sprintf(totalC,"%u",totalNets); }
 
     Screen::setFooter("GPS: UPDATED");
     Screen::update();
@@ -132,18 +130,13 @@ void updateGPS(uint8_t override) {
 
     sprintf(satsC,"%u",sats);
 
-    if (totalNets-1 > 999) {
-        // sprintf(totalC,"%uK",((totalNets-1)/1000));
-        sprintf(totalC,"%gK",((totalNets-1)/100)/10.0);
-        // Serial.println(((totalNets-1)/100)/10.0);
-    }
-    else {
-        sprintf(totalC,"%u",totalNets-1);
-    }
+    if      (totalNets > 999)  { sprintf(totalC,"%gK",((totalNets-1)/100)/10.0); }
+    else if (totalNets > 9999) { sprintf(totalC,"%uK",((totalNets-1)/1000));     }
+    else                       { sprintf(totalC,"%u",totalNets); }
 
     sprintf(openNetsC,"%u",openNets);
     sprintf(tmpC,"%u°",getTemp());
-    sprintf(batC,"%u%",getBattery());
+    sprintf(batC,"%u%%",getBattery());
     sprintf(speedC,"%u",speed);
 
     Screen::setFooter("GPS: UPDATED");
@@ -159,7 +152,9 @@ void initBat() {
     if (!maxlipo.begin()) {
         Screen::setFooter("Charger NOT FOUND!");
         Screen::update();
+        lipoPresent = false;
     }
+    
     Screen::setFooter("Charger FOUND!");
     Screen::update();
 
@@ -287,7 +282,12 @@ void Wardriver::init() {
     Filesys::init(updateScreen); delay(1000);
     initBat();
     
-    initGPS();
+    #ifdef DUMMY_GPS
+        initGPS(1);
+    #else
+        initGPS();
+    #endif
+
     char fileDT[150]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
     // Serial.println(sats);
     // Serial.println(const_cast<char*> (String(sats).c_str()));
@@ -305,25 +305,21 @@ unsigned long tmpTime = millis();
 
 void Wardriver::scan() {
     Serial.println("In scan.");
-    updateGPS(); // poll current GPS coordinates
-
+    #ifdef DUMMY_GPS
+        updateGPS(1);
+    #else
+        updateGPS(); // poll current GPS coordinates
+    #endif
     tmpTime = millis();
     if ((tmpTime-lastTime)>3000) {
         getBattery();
         lastTime = tmpTime;
           Serial.print(F("Batt Voltage: ")); Serial.print(maxlipo.cellVoltage(), 3); Serial.println(" V");
-  Serial.print(F("Batt Percent: ")); Serial.print(maxlipo.cellPercent(), 1); Serial.println(" %");
+          Serial.print(F("Batt Percent: ")); Serial.print(maxlipo.cellPercent(), 1); Serial.println(" %");
     }
-    
 
-    // Serial.print("Total: ");
-    // Serial.println(totalNets);
-    // Serial.println(test[1]);
-    // Serial.print(sizeof(totalC));
-    // Serial.print(sizeof(satsC));
 
-    delay(1000);
-    // getBattery();
+    delay(SCAN_INTERVAL);
     scanNets(); // scan WiFi nets
     smartDelay(500);
 }
