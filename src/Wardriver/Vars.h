@@ -2,16 +2,18 @@
 #include "Arduino.h"
 
 // SET BOARD BEFORE COMPILING
-#define QT_WARDRIVER
+#define CUTIE_WARDRIVER
 
-#define VERSION 1.3
-#define VERSION_STR "v1.3"
+#define VERSION 1.5
+#define VERSION_STR "v1.5"
 #define WIGLE_HEADER "MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type"
 
 #define SERIAL_BAUD 115200
 #define GPS_BAUD 9600
 #define TIMEZONE_UTC -7
 #define SCAN_INTERVAL 500
+
+// #define DUMMY_GPS 
 
 /* Pin Definitions */
 
@@ -48,15 +50,15 @@
     #define MODEL "Developer Kit"
     #define BOARD "ESP8266"
 
-#elif defined(bruh)
-    #define LOG_PREFIX "QT-Py"
-    #define DEVICE "QT-Py_Wardriver"
-    #define MODEL "QT-Py_Wardriver"
+#elif defined(CUTIE_WARDRIVER)
+    #define LOG_PREFIX "Cutie"
+    #define DEVICE "Cutie Wardriver"
+    #define MODEL "Cutie Wardriver"
     #define BOARD "ESP32-C3"
 
-#elif defined(QT_WARDRIVER) 
-    #define LOG_PREFIX "Nugget"
-    #define DEVICE "Nugget"
+#elif defined(DEVKITTY) 
+    #define LOG_PREFIX "DevKitty"
+    #define DEVICE "DevKitty"
     #define MODEL "DevKitty"
     #define BOARD "ESP32-S2"
 #endif

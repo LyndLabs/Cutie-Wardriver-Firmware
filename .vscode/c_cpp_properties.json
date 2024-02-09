@@ -218,6 +218,8 @@
                 "/home/alex/Arduino/libraries/ESP8266_and_ESP32_OLED_driver_for_SSD1306_displays/src",
                 "/home/alex/.arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/Wire/src",
                 "/home/alex/.arduino15/packages/esp32/hardware/esp32/2.0.4/libraries/WiFi/src",
+                "/home/alex/Arduino/libraries/Adafruit_MAX1704X",
+                "/home/alex/Arduino/libraries/Adafruit_BusIO",
                 "/home/alex/Arduino/libraries/TinyGPSPlus-master/src",
                 "/home/alex/.arduino15/packages/esp32/tools/riscv32-esp-elf-gcc/gcc8_4_0-esp-2021r2-patch3/riscv32-esp-elf/include/c++/8.4.0",
                 "/home/alex/.arduino15/packages/esp32/tools/riscv32-esp-elf-gcc/gcc8_4_0-esp-2021r2-patch3/riscv32-esp-elf/include/c++/8.4.0/riscv32-esp-elf/rv32imc/ilp32",
