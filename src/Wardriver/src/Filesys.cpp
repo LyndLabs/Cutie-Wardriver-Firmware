@@ -58,7 +58,7 @@ void Filesys::createLog(char *filename, ScreenUpdateCallback callback) {
 
     uint8_t logNum = 0;
     char wiglePreHeader[160];
-    sprintf(wiglePreHeader, "WigleWifi-1.4,appRelease=%f,model=%s,release=%F,device=%s,display=SH1106,board=%s,brand=LyndLabs",VERSION,MODEL,VERSION,DEVICE,BOARD);
+    sprintf(wiglePreHeader, "WigleWifi-1.4,appRelease=%g,model=%s,release=%g,device=%s,display=SH1106,board=%s,brand=LyndLabs",VERSION,MODEL,VERSION,DEVICE,BOARD);
 
     // CHECK IF FILE EXISTS
     while (true) {
