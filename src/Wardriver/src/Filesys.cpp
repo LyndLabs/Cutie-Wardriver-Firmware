@@ -6,6 +6,14 @@
 unsigned long startInit;
 unsigned long finishInit;
 
+// Define these in config.txt file on SD 
+// using value=true or value=false  
+// one per line, dynamic scan overrides timePerChan
+bool Filesys::dedupe = false;
+bool Filesys::showHidden = false;
+bool Filesys::dynamicScan = false;
+int Filesys::timePerChan = 250;
+
 /* FatFS logging or SD Card*/
 #include <SD.h>
 
@@ -29,27 +37,46 @@ void Filesys::init(ScreenUpdateCallback callback) {
         }
         callback("SD Card: FOUND!!");
 
-    // Filesys::configure();
+     Filesys::configure();
 
 }
 
 void Filesys::configure() {
 
-    // create config.txt if it doesn't exist
-    // if (!FS_VAR.exists("config.txt")) { 
-    //     File tmpSettings = FS_VAR.open("config.txt", FILE_WRITE);
-        // tmpSettings.println("# Duplicates recommended");
-        // tmpSettings.println("Duplicates: y");
-        // tmpSettings.println("GPS RX: D4");
-        // tmpSettings.println("GPS RX: D3");
+    File configFile = SD.open("/config.txt");
+  if (!configFile) {
+    Serial.println("Failed to open config file");
+    return;
+  }
 
-        // tmpSettings.close();
-    // }
-
-    // read settings & write to variables
-    // File tmpSettings = FS_VAR.open("config.txt", FILE_WRITE);
-    // tmpSettings.read()
-
+  while (configFile.available()) {
+    String line = configFile.readStringUntil('\n');
+    int separatorPos = line.indexOf('=');
+    if (separatorPos != -1) {
+      String key = line.substring(0, separatorPos);
+      String value = line.substring(separatorPos + 1);
+      // format: param=true/false, one per line
+      if (key == "dedupe") {
+        dedupe = (value == "true");
+        Serial.print("dedupe ");
+        Serial.println(dedupe ? "true" : "false");
+      } else if (key == "showHidden") {
+        showHidden = (value == "true");
+        Serial.print("showHidden ");
+        Serial.println(showHidden ? "true" : "false");
+      } else if (key == "timePerChan") {
+        timePerChan = value.toInt();
+        Serial.print("timePerChan ");
+        Serial.println(timePerChan);
+      } else if (key == "dynamicScan") {
+        dynamicScan = (value == "true");
+        Serial.print("dynamicScan ");
+        Serial.println(dynamicScan ? "true" : "false");
+      }
+      // others config vars, ask Alex on this
+    }
+  }
+  configFile.close();
 }
 
 

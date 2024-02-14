@@ -11,67 +11,71 @@
 #include "Filesys.h"
 
 #if defined(ESP8266)
-    #include <SoftwareSerial.h>
-    SoftwareSerial SERIAL_VAR(GPS_RX, GPS_TX); // RX, TX
+#include <SoftwareSerial.h>
+SoftwareSerial SERIAL_VAR(GPS_RX, GPS_TX);  // RX, TX
 #endif
 
 TinyGPSPlus gps;
 Adafruit_MAX17048 maxlipo;
-bool lipoPresent = true;
 
 // CURRENT GPS & DATTIME STRING
-float lat = 0; float lng = 0;
-int alt; double hdop;
+float lat = 0;
+float lng = 0;
+int alt;
+double hdop;
 char strDateTime[30];
-char currentGPS[20]="...";
+char currentGPS[20] = "...";
 
 // RECON PARAMS
-uint32_t totalNets = 0; // for some reason doesn't work if = 0
-uint8_t  clients = 0;
-uint8_t  openNets = 0;
-uint8_t  sats = 0;
-uint8_t  bat = 0;
-uint8_t  speed = 0;
+const int MAX_MACS = 150;
+uint32_t totalNets = 0;
+uint8_t clients = 0;
+uint8_t openNets = 0;
+uint8_t sats = 0;
+uint8_t bat = 0;
+uint8_t speed = 0;
+float batF = 0;
+
+// DYNAMIC SCAN VARS
+const int popularChannels[] = { 1, 6, 11 };
+const int standardChannels[] = { 2, 3, 4, 5, 7, 8, 9, 10 };
+int timePerChannel[14] = { 300, 100, 100, 100, 100, 300, 100, 100, 100, 100, 300, 100, 100, 100 };
 
 
-float batF =0;
-//
-char satsC[4]="..."; 
-
-char totalC[5]="..."; 
-char openNetsC[4]="...";
-char tmpC[5]="..."; char batC[5]="..."; char speedC[4]="..."; 
+// DASH ICONS
+char satsC[4] = "...";
+char totalC[4] = "...";
+char openNetsC[4] = "...";
+char tmpC[4] = "...";
+char batC[4] = "...";
+char speedC[4] = "...";
 
 // CURRENT DATETIME
-uint8_t hr; uint8_t mn; uint8_t sc;
-uint16_t yr; uint8_t mt; uint8_t dy;
-char currTime[10]="...";
+uint8_t hr;
+uint8_t mn;
+uint8_t sc;
+uint16_t yr;
+uint8_t mt;
+uint8_t dy;
+char currTime[10] = "...";
 
-
-char *test[6] = {satsC,totalC,openNetsC,tmpC,batC,speedC};
+char* test[6] = { satsC, totalC, openNetsC, tmpC, batC, speedC };
 
 Wardriver::Wardriver() {
-
 }
 
 uint8_t getBattery() {
-    bat = 0;
-    if (lipoPresent) {
-        bat = (uint8_t) maxlipo.cellPercent();
-        if (bat>100) bat = 100;
-    }
-
-    return bat;
+  bat = (uint8_t)maxlipo.cellPercent();
+  return bat;
 }
 
 uint8_t getTemp() {
-//   Serial.print("Temperature: ");
+  //   Serial.print("Temperature: ");
   float result = 0;
   temp_sensor_read_celsius(&result);
 
   return (int)result;
 }
-
 
 static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
@@ -81,246 +85,324 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
+bool isSSIDSeen(String ssid, String ssidBuffer[], int& ssidIndex) {
+  for (int j = 0; j < ssidIndex; j++) {
+    if (ssidBuffer[j] == ssid) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool findInArray(int value, const int* array, int size) {
+  for (int i = 0; i < size; i++) {
+    if (array[i] == value) return true;
+  }
+  return false;
+}
+
+// TESTING: dynamic scan
+void updateTimePerChannel(int channel, int networksFound) {
+  const int FEW_NETWORKS_THRESHOLD = 1;
+  const int MANY_NETWORKS_THRESHOLD = 5;
+  const int POPULAR_TIME_INCREMENT = 100;  // Higher increment for popular channels
+  const int STANDARD_TIME_INCREMENT = 50;  // Standard increment
+  const int MAX_TIME = 500;
+  const int MIN_TIME = 50;
+
+  int timeIncrement;
+
+  // Determine the time increment based on channel type
+  if (findInArray(channel, popularChannels, sizeof(popularChannels) / sizeof(popularChannels[0]))) {
+    timeIncrement = POPULAR_TIME_INCREMENT;
+  } else {
+    timeIncrement = STANDARD_TIME_INCREMENT;
+  }
+
+  // Adjust the time per channel based on the number of networks found
+  if (networksFound >= MANY_NETWORKS_THRESHOLD) {
+    timePerChannel[channel - 1] += timeIncrement;
+    if (timePerChannel[channel - 1] > MAX_TIME) {
+      timePerChannel[channel - 1] = MAX_TIME;
+    }
+  } else if (networksFound <= FEW_NETWORKS_THRESHOLD) {
+    timePerChannel[channel - 1] -= timeIncrement;
+    if (timePerChannel[channel - 1] < MIN_TIME) {
+      timePerChannel[channel - 1] = MIN_TIME;
+    }
+  }
+}
+
 void updateGPS() {
-    lat = gps.location.lat(); lng = gps.location.lng();
-    alt = (int) gps.altitude.meters();
-    hdop = gps.hdop.hdop();
-    sats = gps.satellites.value();
-    speed = gps.speed.mph();
+  lat = gps.location.lat();
+  lng = gps.location.lng();
+  alt = (int)gps.altitude.meters();
+  hdop = gps.hdop.hdop();
+  sats = gps.satellites.value();
+  speed = gps.speed.mph();
 
-    yr = gps.date.year();
-    mt = gps.date.month();
-    dy = gps.date.day();
+  yr = gps.date.year();
+  mt = gps.date.month();
+  dy = gps.date.day();
 
-    hr = gps.time.hour();
-    mn = gps.time.minute();
-    sc = gps.time.second();
+  hr = gps.time.hour();
+  mn = gps.time.minute();
+  sc = gps.time.second();
 
-    sprintf(strDateTime,"%04d-%02d-%02d %02d:%02d:%02d",yr,mt,dy,hr,mn,sc);
-    sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
-    sprintf(currTime,"%02d:%02d",hr,mn);
+  sprintf(strDateTime, "%04d-%02d-%02d %02d:%02d:%02d", yr, mt, dy, hr, mn, sc);
+  sprintf(currentGPS, "%1.3f,%1.3f", lat, lng);
+  sprintf(currTime, "%02d:%02d", hr, mn);
+  sprintf(satsC, "%u", sats);
+  
+  sprintf(openNetsC, "%u", openNets);
+  uint8_t tmpTemp = getTemp();
+  sprintf(tmpC, "%u", tmpTemp);
+  sprintf(batC, "%u", getBattery());
+  sprintf(speedC, "%u", speed);
+  sprintf(totalC, "%u", totalNets);
 
-    sprintf(satsC,"%u",sats);       
-    sprintf(openNetsC,"%u",openNets);
-    
-    uint8_t tmpTemp = getTemp();
-    sprintf(tmpC,"%u°",tmpTemp);
-    sprintf(batC,"%u%%",getBattery());
-    sprintf(speedC,"%u",speed);
-   
-    if      (totalNets > 999)  { sprintf(totalC,"%gK",((totalNets-1)/100)/10.0); }
-    else if (totalNets > 9999) { sprintf(totalC,"%uK",((totalNets-1)/1000));     }
-    else                       { sprintf(totalC,"%u",totalNets); }
-
-    Screen::setFooter("GPS: UPDATED");
-    Screen::update();
+  Screen::setFooter("GPS: UPDATED");
+  Screen::update();
 }
 
 void updateGPS(uint8_t override) {
-    lat = 37.8715; lng = 122.2730;
-    alt = 220; hdop = 1.5;
-    sats = 3; speed = 69;
+  lat = 37.8715;
+  lng = 122.2730;
+  alt = 220;
+  hdop = 1.5;
+  sats = 3;
+  speed = 69;
 
-    yr = 2023; mt = 7; dy = 25;
-    hr = 10; mn = 36; sc = 56;
+  yr = 2023;
+  mt = 7;
+  dy = 25;
+  hr = 10;
+  mn = 36;
+  sc = 56;
 
-    sprintf(strDateTime,"%i-%i-%i %i:%i:%i",yr,mt,dy,hr,mn,sc);
-    sprintf(currentGPS,"%1.3f,%1.3f",lat,lng);
-    sprintf(currTime,"%02d:%02d",hr,mn);
+  sprintf(strDateTime, "%i-%i-%i %i:%i:%i", yr, mt, dy, hr, mn, sc);
+  sprintf(currentGPS, "%1.3f,%1.3f", lat, lng);
+  sprintf(currTime, "%02d:%02d", hr, mn);
 
-    sprintf(satsC,"%u",sats);
+  sprintf(satsC, "%u", sats);
 
-    if      (totalNets > 999)  { sprintf(totalC,"%gK",((totalNets-1)/100)/10.0); }
-    else if (totalNets > 9999) { sprintf(totalC,"%uK",((totalNets-1)/1000));     }
-    else                       { sprintf(totalC,"%u",totalNets); }
+  if (totalNets - 1 > 999) {
+    // sprintf(totalC,"%uK",((totalNets-1)/1000));
+    sprintf(totalC, "%gK", ((totalNets - 1) / 100) / 10.0);
+    // Serial.println(((totalNets-1)/100)/10.0);
+  } else {
+    sprintf(totalC, "%u", totalNets - 1);
+  }
 
-    sprintf(openNetsC,"%u",openNets);
-    sprintf(tmpC,"%u°",getTemp());
-    sprintf(batC,"%u%%",getBattery());
-    sprintf(speedC,"%u",speed);
+  sprintf(openNetsC, "%u", openNets);
+  sprintf(tmpC, "%u°", getTemp());
+  sprintf(batC, "%u%", getBattery());
+  sprintf(speedC, "%u", speed);
 
-    Screen::setFooter("GPS: UPDATED");
-    Screen::update();
-    // Screen::drawMockup("...","...",0,0,0,0,0,0,"test");
+  Screen::setFooter("GPS: UPDATED");
+  Screen::update();
+  // Screen::drawMockup("...","...",0,0,0,0,0,0,"test");
 }
 
 // initialize GPS & get first coords
 void initBat() {
-    Screen::setFooter("BAT: Initializing...");
+  Screen::setFooter("BAT: Initializing...");
+  Screen::update();
+
+  if (!maxlipo.begin()) {
+    Screen::setFooter("Charger NOT FOUND!");
     Screen::update();
+  }
+  Screen::setFooter("Charger FOUND!");
+  Screen::update();
 
-    if (!maxlipo.begin()) {
-        Screen::setFooter("Charger NOT FOUND!");
-        Screen::update();
-        lipoPresent = false;
-    }
-    
-    Screen::setFooter("Charger FOUND!");
-    Screen::update();
-
-    getBattery();
-
+  getBattery();
 }
 
 void initGPS() {
 
-    #if defined(ESP32)
-        SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
-    #elif defined(ESP8266)
-        SERIAL_VAR.begin(GPS_BAUD);
-    #endif
+#if defined(ESP32)
+  SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+#elif defined(ESP8266)
+  SERIAL_VAR.begin(GPS_BAUD);
+#endif
 
-    // char *test[6] = {"1","2","3","23","5","6"};
-    // Screen::setIcons(icons_bits, test, 6);    
-    // Screen::setHeader(currentGPS,currTime);   // pass ref
-    Screen::setFooter("GPS Initializing..."); //
-    Screen::update();
+  // char *test[6] = {"1","2","3","23","5","6"};
+  // Screen::setIcons(icons_bits, test, 6);
+  // Screen::setHeader(currentGPS,currTime);   // pass ref
+  Screen::setFooter("GPS Initializing...");  //
+  Screen::update();
 
-    unsigned long startGPSTime = millis();
+  unsigned long startGPSTime = millis();
 
-    while (! (gps.location.isValid())) {
-        
-        if (millis()-startGPSTime > 5000 && gps.charsProcessed() < 10) {               
-            Screen::setFooter("GPS: NOT FOUND");
-            Screen::update();           
-            
-        }
-        else if (gps.charsProcessed() > 10) {
-            Screen::setFooter("GPS: Waiting for fix...");
-            Screen::update(); 
-        }
-        
-        sats = gps.satellites.value();
-        // totalNets = 0;
-        Serial.println(gps.location.isValid());
-        //ESP.wdtFeed(); 
-        yield();
+  while (!(gps.location.isValid())) {
 
-	smartDelay(500);
+    if (millis() - startGPSTime > 5000 && gps.charsProcessed() < 10) {
+      Screen::setFooter("GPS: NOT FOUND");
+      Screen::update();
+
+    } else if (gps.charsProcessed() > 10) {
+      Screen::setFooter("GPS: Waiting for fix...");
+      Screen::update();
     }
-    while ((gps.date.year() == 2000)) {
-        Screen::setFooter("GPS: Validating time...");
-        //ESP.wdtFeed(); 
-        yield();
-	    smartDelay(500);
-        Serial.println(gps.date.year());
-    }
-    Screen::setFooter("GPS: LOCATION FOUND");
-    updateGPS();
+
+    sats = gps.satellites.value();
+    // totalNets = 0;
+    Serial.println(gps.location.isValid());
+    //ESP.wdtFeed();
+    yield();
+
+    smartDelay(500);
+  }
+  while ((gps.date.year() == 2000)) {
+    Screen::setFooter("GPS: Validating time...");
+    //ESP.wdtFeed();
+    yield();
+    smartDelay(500);
+    Serial.println(gps.date.year());
+  }
+  Screen::setFooter("GPS: LOCATION FOUND");
+  updateGPS();
 }
 
 void initGPS(uint8_t override) {
-    #if defined(ESP32)
-        // SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
-    #endif
-    Screen::setFooter("GPS: Emulating fix");
-    Screen::update();
-    delay(500);
+#if defined(ESP32)
+  // SERIAL_VAR.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+#endif
+  Screen::setFooter("GPS: Emulating fix");
+  Screen::update();
+  delay(500);
 
-    updateGPS(0);
-    Screen::setFooter("GPS: LOCATION FOUND");
-    Screen::update();
-    Serial.println("Screen updated.");
+  updateGPS(0);
+  Screen::setFooter("GPS: LOCATION FOUND");
+  Screen::update();
+  Serial.println("Screen updated.");
 }
 
 void scanNets() {
-    char entry[150]; 
-    Serial.println("[ ] Scanning WiFi networks...");
-    Screen::setFooter("WiFi: Scanning...");
-    Screen::update();
+  // Buffer and index for SSIDs
+  static String ssidBuffer[MAX_MACS];
+  static int ssidIndex = 0;
 
-    int n = WiFi.scanNetworks();
-    // totalNets+=n;
-    openNets = 0;
+  char entry[250];
+  Serial.println("[ ] Scanning WiFi networks...");
+  Screen::setFooter("WiFi: Scanning...");
+  Screen::update();
 
-    Filesys::open();
-    
-    for (int i = 0; i < n; ++i) {
-        char* authType = getAuthType(WiFi.encryptionType(i));
-        #if defined(ESP8266)
-            if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
-        #elif defined(ESP32)
-            if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
-        #endif
+  Filesys::open();
+  int numNets = 0;  // Reset at each scan call
 
-        sprintf(entry,"%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(),authType,strDateTime,WiFi.channel(i),WiFi.RSSI(i),lat,lng,alt,hdop);
-								
-        Serial.println(entry);
-        Filesys::write(entry);
-        totalNets++;
-        Serial.print("Total: ");
-        Serial.println(totalNets);
+  auto processNetworks = [&](int networksFound) {
+    for (int i = 0; i < networksFound; i++) {
+      if (Filesys::dedupe) {
+        String ssid = WiFi.SSID(i);
+        if (isSSIDSeen(ssid, ssidBuffer, ssidIndex)) {
+          continue;
+        }
+      }
+      char* authType = getAuthType(WiFi.encryptionType(i));
+#if defined(ESP8266)
+      if (WiFi.encryptionType(i) == ENC_TYPE_NONE) openNets++;
+#elif defined(ESP32)
+      if (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) openNets++;
+#endif
+
+      sprintf(entry, "%s,\"%s\",%s,%s,%u,%i,%f,%f,%i,%f,WIFI", WiFi.BSSIDstr(i).c_str(), WiFi.SSID(i).c_str(), authType, strDateTime, WiFi.channel(i), WiFi.RSSI(i), lat, lng, alt, hdop);
+
+      Serial.println(entry);
+      Filesys::write(entry);
+      totalNets++;
+      numNets++;
+
+      if (Filesys::dedupe && ssidIndex < MAX_MACS) {
+        ssidBuffer[ssidIndex++] = WiFi.SSID(i);
+      }
     }
-    
-    Serial.println(::totalNets);
+  };
 
-    char message[21];
-    sprintf(message,"Logged %d networks.",n);
-    Screen::setFooter(message);
-    Screen::update();
+  if (Filesys::dynamicScan) {
+    for (int channel = 1; channel <= 11; channel++) {
+      int networksOnChannel = WiFi.scanNetworks(false, Filesys::showHidden, false, timePerChannel[channel - 1], channel);
+      processNetworks(networksOnChannel);
+      updateTimePerChannel(channel, networksOnChannel);
+    }
+  } else {
+    int networksFound = WiFi.scanNetworks(false, Filesys::showHidden, false, Filesys::timePerChan);
+    processNetworks(networksFound);
+  }
 
-    Filesys::close();
-    WiFi.scanDelete();
-    
+  char message[30];
+  sprintf(message, "Logged %d Networks", numNets);
+  Screen::setFooter(message);
+  Screen::update();
+
+  Filesys::close();
+  WiFi.scanDelete();
 }
+
 
 void Wardriver::init() {
 
-    totalNets = 0;
-    temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
-    temp_sensor.dac_offset = TSENS_DAC_L2;  // TSENS_DAC_L2 is default; L4(-40°C ~ 20°C), L2(-10°C ~ 80°C), L1(20°C ~ 100°C), L0(50°C ~ 125°C)
-    temp_sensor_set_config(temp_sensor);
-    temp_sensor_start();
+  totalNets = 0;
+  temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
+  temp_sensor.dac_offset = TSENS_DAC_L2;  // TSENS_DAC_L2 is default; L4(-40°C ~ 20°C), L2(-10°C ~ 80°C), L1(20°C ~ 100°C), L0(50°C ~ 125°C)
+  temp_sensor_set_config(temp_sensor);
+  temp_sensor_start();
 
 
-    Screen::init();
-    Screen::drawSplash(2);
+  Screen::init();
+  Screen::drawSplash(2);
 
-    Screen::setIcons(icons_bits, test, 6);    
-    Screen::setHeader(currentGPS,currTime);
-    
-    Filesys::init(updateScreen); delay(1000);
-    initBat();
-    
-    #ifdef DUMMY_GPS
-        initGPS(1);
-    #else
-        initGPS();
-    #endif
+  Screen::setIcons(icons_bits, test, 6);
+  Screen::setHeader(currentGPS, currTime);
 
-    char fileDT[150]; sprintf(fileDT,"%i-%02d-%02d",yr, mt, dy);
-    // Serial.println(sats);
-    // Serial.println(const_cast<char*> (String(sats).c_str()));
-    // Serial.println(fileDT);
-    delay(1000);
-    Filesys::createLog(fileDT, updateScreen);
+  Filesys::init(updateScreen);
+  delay(1000);
+  initBat();
+
+  initGPS();
+  char fileDT[150];
+  sprintf(fileDT, "%i-%02d-%02d", yr, mt, dy);
+  // Serial.println(sats);
+  // Serial.println(const_cast<char*> (String(sats).c_str()));
+  // Serial.println(fileDT);
+  delay(1000);
+  Filesys::createLog(fileDT, updateScreen);
 }
 
 void Wardriver::updateScreen(char* message) {
-    Screen::setFooter(message); Screen::update();
+  Screen::setFooter(message);
+  Screen::update();
 }
 
 unsigned long lastTime = millis();
 unsigned long tmpTime = millis();
 
 void Wardriver::scan() {
-    Serial.println("In scan.");
-    #ifdef DUMMY_GPS
-        updateGPS(1);
-    #else
-        updateGPS(); // poll current GPS coordinates
-    #endif
-    tmpTime = millis();
-    if ((tmpTime-lastTime)>3000) {
-        getBattery();
-        lastTime = tmpTime;
-          Serial.print(F("Batt Voltage: ")); Serial.print(maxlipo.cellVoltage(), 3); Serial.println(" V");
-          Serial.print(F("Batt Percent: ")); Serial.print(maxlipo.cellPercent(), 1); Serial.println(" %");
-    }
+  Serial.println("In scan.");
+  updateGPS();  // poll current GPS coordinates
+
+  tmpTime = millis();
+  if ((tmpTime - lastTime) > 3000) {
+    getBattery();
+    lastTime = tmpTime;
+    Serial.print(F("Batt Voltage: "));
+    Serial.print(maxlipo.cellVoltage(), 3);
+    Serial.println(" V");
+    Serial.print(F("Batt Percent: "));
+    Serial.print(maxlipo.cellPercent(), 1);
+    Serial.println(" %");
+  }
 
 
-    delay(SCAN_INTERVAL);
-    scanNets(); // scan WiFi nets
-    smartDelay(500);
+  // Serial.print("Total: ");
+  // Serial.println(totalNets);
+  // Serial.println(test[1]);
+  // Serial.print(sizeof(totalC));
+  // Serial.print(sizeof(satsC));
+
+  //delay(1000); // no need to pause 1s
+
+  scanNets();  // scan WiFi nets
+  smartDelay(500);
 }
-
