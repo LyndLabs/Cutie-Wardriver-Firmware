@@ -404,5 +404,5 @@ void Wardriver::scan() {
   //delay(1000); // no need to pause 1s
 
   scanNets();  // scan WiFi nets
-  smartDelay(500);
+  smartDelay(250);
 }
